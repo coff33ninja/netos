@@ -15,7 +15,12 @@ import { performScan } from "@/utils/scanner";
 import { wakeDevice } from "@/utils/wol";
 import { useToast } from "@/components/ui/use-toast";
 
-export const DeviceList = () => {
+interface DeviceListProps {
+  currentPage: number;
+  itemsPerPage: number;
+}
+
+export const DeviceList = ({ currentPage, itemsPerPage }: DeviceListProps) => {
   const [devices, setDevices] = useState<DeviceInfo[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const { toast } = useToast();
@@ -84,6 +89,9 @@ export const DeviceList = () => {
     loadDevices();
   }, []);
 
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedDevices = devices.slice(startIndex, startIndex + itemsPerPage);
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -108,7 +116,7 @@ export const DeviceList = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {devices.map((device) => (
+          {paginatedDevices.map((device) => (
             <TableRow key={device.id}>
               <TableCell className="font-medium">{device.name}</TableCell>
               <TableCell>{device.ip}</TableCell>

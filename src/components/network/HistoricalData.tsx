@@ -11,27 +11,28 @@ const data = [
   { time: '20:00', devices: 22, speed: 90 },
 ];
 
-export const HistoricalData = () => {
+interface HistoricalDataProps {
+  currentPage: number;
+  itemsPerPage: number;
+}
+
+export const HistoricalData = ({ currentPage, itemsPerPage }: HistoricalDataProps) => {
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedData = data.slice(startIndex, startIndex + itemsPerPage);
+
   return (
-    <Card className="col-span-2">
-      <CardHeader>
-        <CardTitle>Network Performance History</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="time" />
-              <YAxis yAxisId="left" />
-              <YAxis yAxisId="right" orientation="right" />
-              <Tooltip />
-              <Line yAxisId="left" type="monotone" dataKey="devices" stroke="#8884d8" name="Active Devices" />
-              <Line yAxisId="right" type="monotone" dataKey="speed" stroke="#82ca9d" name="Network Speed (%)" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="h-[300px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={paginatedData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="time" />
+          <YAxis yAxisId="left" />
+          <YAxis yAxisId="right" orientation="right" />
+          <Tooltip />
+          <Line yAxisId="left" type="monotone" dataKey="devices" stroke="#8884d8" name="Active Devices" />
+          <Line yAxisId="right" type="monotone" dataKey="speed" stroke="#82ca9d" name="Network Speed (%)" />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   );
 };

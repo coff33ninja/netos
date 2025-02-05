@@ -11,6 +11,11 @@ interface Alert {
   device?: string;
 }
 
+interface AlertSystemProps {
+  currentPage: number;
+  itemsPerPage: number;
+}
+
 const alerts: Alert[] = [
   {
     id: 1,
@@ -56,44 +61,39 @@ const getAlertBadgeVariant = (type: Alert['type']) => {
   }
 };
 
-export const AlertSystem = () => {
+export const AlertSystem = ({ currentPage, itemsPerPage }: AlertSystemProps) => {
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedAlerts = alerts.slice(startIndex, startIndex + itemsPerPage);
+
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-xl font-bold">System Alerts</CardTitle>
-        <Zap className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[300px] pr-4">
-          <div className="space-y-4">
-            {alerts.map((alert) => (
-              <div
-                key={alert.id}
-                className="flex items-start space-x-4 rounded-lg border p-3"
-              >
-                {getAlertIcon(alert.type)}
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">{alert.message}</p>
-                    <Badge variant={getAlertBadgeVariant(alert.type)}>
-                      {alert.type}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center text-xs text-muted-foreground">
-                    <span>{alert.timestamp}</span>
-                    {alert.device && (
-                      <>
-                        <span className="mx-1">•</span>
-                        <span>{alert.device}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
+    <ScrollArea className="h-[300px] pr-4">
+      <div className="space-y-4">
+        {paginatedAlerts.map((alert) => (
+          <div
+            key={alert.id}
+            className="flex items-start space-x-4 rounded-lg border p-3"
+          >
+            {getAlertIcon(alert.type)}
+            <div className="flex-1 space-y-1">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">{alert.message}</p>
+                <Badge variant={getAlertBadgeVariant(alert.type)}>
+                  {alert.type}
+                </Badge>
               </div>
-            ))}
+              <div className="flex items-center text-xs text-muted-foreground">
+                <span>{alert.timestamp}</span>
+                {alert.device && (
+                  <>
+                    <span className="mx-1">•</span>
+                    <span>{alert.device}</span>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+        ))}
+      </div>
+    </ScrollArea>
   );
 };
