@@ -34,7 +34,7 @@ export const performScan = async (): Promise<ScanResult> => {
   try {
     const devices = await scanNetwork();
     
-    // Save each device to the database
+    // Save each device to the mock database
     devices.forEach(device => {
       saveDeviceScan(device);
     });
