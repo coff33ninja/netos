@@ -12,6 +12,7 @@ import { Power, Monitor, Settings } from "lucide-react";
 import { DeviceInfo } from "@/types/network";
 import { getDevices } from "@/utils/database";
 import { performScan } from "@/utils/scanner";
+import { wakeDevice } from "@/utils/wol";
 import { useToast } from "@/components/ui/use-toast";
 
 export const DeviceList = () => {
@@ -41,7 +42,7 @@ export const DeviceList = () => {
         title: "Scan Complete",
         description: `Found ${result.devicesFound} devices in ${result.duration}ms`,
       });
-      loadDevices(); // Reload device list after scan
+      loadDevices();
     } catch (error) {
       toast({
         title: "Scan Failed",
@@ -50,6 +51,32 @@ export const DeviceList = () => {
       });
     } finally {
       setIsScanning(false);
+    }
+  };
+
+  const handleWakeDevice = async (mac: string | undefined, deviceName: string) => {
+    if (!mac) {
+      toast({
+        title: "Error",
+        description: "No MAC address available for this device",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const result = await wakeDevice(mac, deviceName);
+      toast({
+        title: result.success ? "Success" : "Error",
+        description: result.message,
+        variant: result.success ? "default" : "destructive"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to wake device",
+        variant: "destructive"
+      });
     }
   };
 
@@ -94,7 +121,12 @@ export const DeviceList = () => {
               <TableCell>{device.ports?.join(", ")}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon" title="Wake-on-LAN">
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    title="Wake-on-LAN"
+                    onClick={() => handleWakeDevice(device.mac, device.name)}
+                  >
                     <Power className="h-4 w-4" />
                   </Button>
                   <Button variant="outline" size="icon" title="Monitor">
