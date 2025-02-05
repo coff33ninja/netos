@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -8,30 +9,66 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Power, Monitor, Settings } from "lucide-react";
+import { DeviceInfo } from "@/types/network";
+import { getDevices } from "@/utils/database";
+import { performScan } from "@/utils/scanner";
+import { useToast } from "@/components/ui/use-toast";
 
 export const DeviceList = () => {
-  // Sample data - replace with actual device data
-  const devices = [
-    {
-      id: 1,
-      name: "Main Router",
-      ip: "192.168.1.1",
-      type: "Router",
-      status: "Online",
-      ports: ["80", "443", "22"],
-    },
-    {
-      id: 2,
-      name: "File Server",
-      ip: "192.168.1.100",
-      type: "Server",
-      status: "Online",
-      ports: ["22", "445", "3389"],
-    },
-  ];
+  const [devices, setDevices] = useState<DeviceInfo[]>([]);
+  const [isScanning, setIsScanning] = useState(false);
+  const { toast } = useToast();
+
+  const loadDevices = () => {
+    try {
+      const deviceList = getDevices();
+      setDevices(deviceList);
+    } catch (error) {
+      console.error('Error loading devices:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load device list",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleScan = async () => {
+    setIsScanning(true);
+    try {
+      const result = await performScan();
+      toast({
+        title: "Scan Complete",
+        description: `Found ${result.devicesFound} devices in ${result.duration}ms`,
+      });
+      loadDevices(); // Reload device list after scan
+    } catch (error) {
+      toast({
+        title: "Scan Failed",
+        description: "Failed to complete network scan",
+        variant: "destructive"
+      });
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDevices();
+  }, []);
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Connected Devices</h2>
+        <Button 
+          onClick={handleScan} 
+          disabled={isScanning}
+        >
+          {isScanning ? "Scanning..." : "Scan Network"}
+        </Button>
+      </div>
+
       <Table>
         <TableHeader>
           <TableRow>
@@ -54,7 +91,7 @@ export const DeviceList = () => {
                   {device.status}
                 </span>
               </TableCell>
-              <TableCell>{device.ports.join(", ")}</TableCell>
+              <TableCell>{device.ports?.join(", ")}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="icon" title="Wake-on-LAN">
