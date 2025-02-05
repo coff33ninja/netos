@@ -1,17 +1,22 @@
 
 import { DeviceInfo, ScanResult } from '../types/network';
 
+// Mock scan history
+const mockScanHistory: ScanResult[] = [];
+
+// Mock devices storage
+let mockDevicesStorage: DeviceInfo[] = [];
+
 export const saveDeviceScan = async (device: DeviceInfo): Promise<boolean> => {
   try {
-    // TODO: Implement API call to save device scan
-    const response = await fetch('/api/devices', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(device),
-    });
-    return response.ok;
+    // Update or add device to mock storage
+    const existingDeviceIndex = mockDevicesStorage.findIndex(d => d.ip === device.ip);
+    if (existingDeviceIndex >= 0) {
+      mockDevicesStorage[existingDeviceIndex] = device;
+    } else {
+      mockDevicesStorage.push(device);
+    }
+    return true;
   } catch (error) {
     console.error('Error saving device scan:', error);
     return false;
@@ -20,10 +25,9 @@ export const saveDeviceScan = async (device: DeviceInfo): Promise<boolean> => {
 
 export const getDevices = async (): Promise<DeviceInfo[]> => {
   try {
-    // TODO: Implement API call to get devices
-    const response = await fetch('/api/devices');
-    if (!response.ok) throw new Error('Failed to fetch devices');
-    return await response.json();
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return mockDevicesStorage;
   } catch (error) {
     console.error('Error fetching devices:', error);
     return [];
@@ -32,10 +36,9 @@ export const getDevices = async (): Promise<DeviceInfo[]> => {
 
 export const getScanHistory = async (): Promise<ScanResult[]> => {
   try {
-    // TODO: Implement API call to get scan history
-    const response = await fetch('/api/scans');
-    if (!response.ok) throw new Error('Failed to fetch scan history');
-    return await response.json();
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return mockScanHistory;
   } catch (error) {
     console.error('Error fetching scan history:', error);
     return [];
@@ -44,17 +47,11 @@ export const getScanHistory = async (): Promise<ScanResult[]> => {
 
 export const recordScan = async (result: ScanResult): Promise<boolean> => {
   try {
-    // TODO: Implement API call to record scan
-    const response = await fetch('/api/scans', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(result),
-    });
-    return response.ok;
+    mockScanHistory.push(result);
+    return true;
   } catch (error) {
     console.error('Error recording scan:', error);
     return false;
   }
 };
+
