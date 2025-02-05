@@ -83,7 +83,17 @@ export const saveDeviceScan = (device: DeviceInfo) => {
   }
 };
 
-export const getDevices = () => {
+interface DeviceRow {
+  id: number;
+  name: string;
+  ip: string;
+  mac: string | null;
+  type: string;
+  status: string;
+  ports: string | null;
+}
+
+export const getDevices = (): DeviceInfo[] => {
   const stmt = db.prepare(`
     SELECT d.*, GROUP_CONCAT(p.port_number) as ports
     FROM devices d
@@ -91,8 +101,15 @@ export const getDevices = () => {
     GROUP BY d.id
   `);
   
-  return stmt.all().map(device => ({
-    ...device,
+  const devices = stmt.all() as DeviceRow[];
+  
+  return devices.map(device => ({
+    id: device.id,
+    name: device.name,
+    ip: device.ip,
+    mac: device.mac || undefined,
+    type: device.type,
+    status: device.status,
     ports: device.ports ? device.ports.split(',').map(Number) : []
   }));
 };
