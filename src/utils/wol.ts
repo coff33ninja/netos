@@ -1,3 +1,4 @@
+
 export interface WolResult {
   success: boolean;
   message: string;
@@ -5,21 +6,30 @@ export interface WolResult {
 }
 
 export const wakeDevice = async (mac: string, deviceName: string): Promise<WolResult> => {
-  // Mock WoL implementation for browser environment
-  // In a real implementation, this would call a backend API
-  console.log(`Attempting to wake device: ${deviceName} (MAC: ${mac})`);
-  
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // Simulate 90% success rate
-  const success = Math.random() < 0.9;
-  
-  return {
-    success,
-    message: success 
-      ? `Successfully sent wake-up packet to ${deviceName}`
-      : `Failed to send wake-up packet to ${deviceName}`,
-    deviceName
-  };
+  try {
+    // TODO: Implement actual Wake-on-LAN API call
+    const response = await fetch('/api/wol', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ mac, deviceName }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to send wake-up packet');
+    }
+
+    return {
+      success: true,
+      message: `Successfully sent wake-up packet to ${deviceName}`,
+      deviceName
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Failed to send wake-up packet to ${deviceName}: ${(error as Error).message}`,
+      deviceName
+    };
+  }
 };

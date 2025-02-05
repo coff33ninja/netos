@@ -1,53 +1,60 @@
+
 import { DeviceInfo, ScanResult } from '../types/network';
 
-// Mock database using in-memory array
-let devices: DeviceInfo[] = [
-  {
-    id: 1,
-    name: "Main Router",
-    ip: "192.168.1.1",
-    mac: "00:11:22:33:44:55",
-    type: "Router",
-    status: "Online",
-    ports: [80, 443, 22]
-  },
-  {
-    id: 2,
-    name: "File Server",
-    ip: "192.168.1.100",
-    mac: "AA:BB:CC:DD:EE:FF",
-    type: "Server",
-    status: "Online",
-    ports: [22, 445, 3389]
-  }
-];
-
-export const saveDeviceScan = (device: DeviceInfo): boolean => {
+export const saveDeviceScan = async (device: DeviceInfo): Promise<boolean> => {
   try {
-    const existingIndex = devices.findIndex(d => d.ip === device.ip);
-    if (existingIndex >= 0) {
-      devices[existingIndex] = { ...devices[existingIndex], ...device };
-    } else {
-      devices.push({ ...device, id: devices.length + 1 });
-    }
-    return true;
+    // TODO: Implement API call to save device scan
+    const response = await fetch('/api/devices', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(device),
+    });
+    return response.ok;
   } catch (error) {
     console.error('Error saving device scan:', error);
     return false;
   }
 };
 
-export const getDevices = (): DeviceInfo[] => {
-  return [...devices];
+export const getDevices = async (): Promise<DeviceInfo[]> => {
+  try {
+    // TODO: Implement API call to get devices
+    const response = await fetch('/api/devices');
+    if (!response.ok) throw new Error('Failed to fetch devices');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching devices:', error);
+    return [];
+  }
 };
 
-let scanHistory: ScanResult[] = [];
-
-export const getScanHistory = () => {
-  return [...scanHistory];
+export const getScanHistory = async (): Promise<ScanResult[]> => {
+  try {
+    // TODO: Implement API call to get scan history
+    const response = await fetch('/api/scans');
+    if (!response.ok) throw new Error('Failed to fetch scan history');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching scan history:', error);
+    return [];
+  }
 };
 
-export const recordScan = (result: ScanResult) => {
-  scanHistory.push(result);
-  return true;
+export const recordScan = async (result: ScanResult): Promise<boolean> => {
+  try {
+    // TODO: Implement API call to record scan
+    const response = await fetch('/api/scans', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(result),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Error recording scan:', error);
+    return false;
+  }
 };
