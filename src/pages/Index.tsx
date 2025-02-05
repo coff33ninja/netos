@@ -1,6 +1,8 @@
 import { NetworkMap } from "@/components/network/NetworkMap";
 import { DeviceList } from "@/components/network/DeviceList";
 import { MonitoringPanel } from "@/components/network/MonitoringPanel";
+import { HistoricalData } from "@/components/network/HistoricalData";
+import { AlertSystem } from "@/components/network/AlertSystem";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -12,6 +14,11 @@ const Index = () => {
       {/* Monitoring Panel */}
       <div className="mb-6">
         <MonitoringPanel />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <HistoricalData />
+        <AlertSystem />
       </div>
 
       <Tabs defaultValue="map" className="space-y-4">
