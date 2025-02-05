@@ -3,6 +3,19 @@ import { Network } from "vis-network";
 import { DataSet } from "vis-data";
 import "vis-network/dist/dist/vis-network.css";
 
+// Define proper types for nodes and edges
+interface Node {
+  id: number;
+  label: string;
+  group: string;
+}
+
+interface Edge {
+  id?: number;
+  from: number;
+  to: number;
+}
+
 export const NetworkMap = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const networkRef = useRef<Network | null>(null);
@@ -11,15 +24,15 @@ export const NetworkMap = () => {
     if (!containerRef.current) return;
 
     // Sample data - replace with actual network scan data
-    const nodes = new DataSet([
+    const nodes = new DataSet<Node>([
       { id: 1, label: "Router", group: "network" },
       { id: 2, label: "Server", group: "server" },
       { id: 3, label: "Workstation", group: "client" },
     ]);
 
-    const edges = new DataSet([
-      { from: 1, to: 2 },
-      { from: 1, to: 3 },
+    const edges = new DataSet<Edge>([
+      { id: 1, from: 1, to: 2 },
+      { id: 2, from: 1, to: 3 },
     ]);
 
     const options = {
