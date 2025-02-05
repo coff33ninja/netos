@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { useToast } from "@/components/ui/use-toast";
-import { Save } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Save, Power, RefreshCw, StopCircle } from "lucide-react";
+import { controlBackend } from "@/utils/statusMonitor";
+import { StatusIndicator } from "@/components/network/StatusIndicator";
 
 const Settings = () => {
   const { toast } = useToast();
@@ -18,11 +20,50 @@ const Settings = () => {
     });
   };
 
+  const handleBackendControl = async (action: 'start' | 'stop' | 'restart') => {
+    await controlBackend(action);
+  };
+
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Settings</h1>
+      <StatusIndicator />
       
       <div className="grid gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Backend Control</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex space-x-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => handleBackendControl('start')}
+              >
+                <Power className="mr-2 h-4 w-4" />
+                Start Backend
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => handleBackendControl('stop')}
+              >
+                <StopCircle className="mr-2 h-4 w-4" />
+                Stop Backend
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => handleBackendControl('restart')}
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Restart Backend
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Network Scanning</CardTitle>

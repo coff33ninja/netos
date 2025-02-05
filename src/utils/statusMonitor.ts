@@ -1,20 +1,24 @@
 
 import { BackendStatus, SystemStatus, AlertInfo } from '../types/network';
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 const BACKEND_CHECK_INTERVAL = 30000; // 30 seconds
+const BACKEND_URL = 'http://localhost:3001'; // Update with your backend URL
 let monitoringInterval: NodeJS.Timeout | null = null;
+let lastBackendStatus: boolean | null = null;
 
 export const checkBackendStatus = async (): Promise<BackendStatus> => {
   const startTime = performance.now();
   try {
-    // In development, we'll simulate the backend check
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
+    const response = await fetch(`${BACKEND_URL}/api/status`);
+    if (!response.ok) {
+      throw new Error('Backend is not responding');
+    }
+    const data = await response.json();
     return {
       isOnline: true,
       lastCheck: new Date().toISOString(),
-      version: "1.0.0",
+      version: data.version,
       latency: performance.now() - startTime
     };
   } catch (error) {
@@ -37,21 +41,35 @@ export const startStatusMonitoring = (
   const checkStatus = async () => {
     const backendStatus = await checkBackendStatus();
     
-    if (!backendStatus.isOnline) {
+    // Notify only when status changes
+    if (lastBackendStatus !== null && lastBackendStatus !== backendStatus.isOnline) {
       const alert: AlertInfo = {
         id: Date.now(),
-        type: "error",
-        message: "Backend service is offline",
+        type: backendStatus.isOnline ? "info" : "error",
+        message: backendStatus.isOnline ? 
+          "Backend service is now online" : 
+          "Backend service is offline",
         timestamp: new Date().toISOString(),
-        priority: "high"
+        priority: backendStatus.isOnline ? "low" : "high"
       };
       onAlert(alert);
+      
+      // Show toast notification
+      toast({
+        title: backendStatus.isOnline ? "Backend Connected" : "Backend Disconnected",
+        description: backendStatus.isOnline ? 
+          "Backend service is now available" : 
+          "Backend service is currently unavailable",
+        variant: backendStatus.isOnline ? "default" : "destructive",
+      });
     }
+    
+    lastBackendStatus = backendStatus.isOnline;
 
     const systemStatus: SystemStatus = {
       backend: backendStatus,
-      activeDevices: 0, // This will be updated from actual device monitoring
-      activeNodes: 0, // This will be updated from actual node monitoring
+      activeDevices: 0,
+      activeNodes: 0,
       alerts: []
     };
 
@@ -79,3 +97,34 @@ export const stopStatusMonitoring = () => {
   }
 };
 
+export const controlBackend = async (action: 'start' | 'stop' | 'restart'): Promise<boolean> => {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/control`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ action }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to ${action} backend`);
+    }
+
+    toast({
+      title: "Backend Control",
+      description: `Successfully ${action}ed backend service`,
+      variant: "default",
+    });
+
+    return true;
+  } catch (error) {
+    console.error(`Failed to ${action} backend:`, error);
+    toast({
+      title: "Backend Control Error",
+      description: `Failed to ${action} backend service`,
+      variant: "destructive",
+    });
+    return false;
+  }
+};
