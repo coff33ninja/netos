@@ -59,3 +59,19 @@ export interface AlertInfo {
   resolved?: boolean;
   priority: "high" | "medium" | "low";
 }
+
+export interface BackendStatus {
+  isOnline: boolean;
+  lastCheck: string;
+  version?: string;
+  latency?: number;
+}
+
+export interface SystemStatus {
+  backend: BackendStatus;
+  activeDevices: number;
+  activeNodes: number;
+  lastScanTimestamp?: string;
+  alerts: AlertInfo[];
+}
+

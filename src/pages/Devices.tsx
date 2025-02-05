@@ -1,5 +1,6 @@
 
 import { DeviceList } from "@/components/network/DeviceList";
+import { StatusIndicator } from "@/components/network/StatusIndicator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 import {
@@ -52,6 +53,7 @@ const Devices = () => {
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Device Management</h1>
+      <StatusIndicator />
       <Card>
         <CardHeader>
           <CardTitle>Connected Devices</CardTitle>
@@ -66,3 +68,4 @@ const Devices = () => {
 };
 
 export default Devices;
+
