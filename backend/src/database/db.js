@@ -1,4 +1,5 @@
-// Simple in-memory database for testing
+import { saveData, loadData } from './persistence.js';
+
 class InMemoryDB {
     constructor() {
         this.users = new Map();
@@ -9,10 +10,33 @@ class InMemoryDB {
         this.networkScanIdCounter = 1;
     }
 
+    async initialize() {
+        const data = await loadData();
+        this.users = new Map(Object.entries(data.users || {}));
+        this.devices = new Map(Object.entries(data.devices || {}));
+        this.networkScans = new Map(Object.entries(data.networkScans || {}));
+        this.userIdCounter = data.userIdCounter || 1;
+        this.deviceIdCounter = data.deviceIdCounter || 1;
+        this.networkScanIdCounter = data.networkScanIdCounter || 1;
+    }
+
+    async save() {
+        const data = {
+            users: Object.fromEntries(this.users),
+            devices: Object.fromEntries(this.devices),
+            networkScans: Object.fromEntries(this.networkScans),
+            userIdCounter: this.userIdCounter,
+            deviceIdCounter: this.deviceIdCounter,
+            networkScanIdCounter: this.networkScanIdCounter
+        };
+        await saveData(data);
+    }
+
     // User methods
     createUser(user) {
         const id = this.userIdCounter++;
         this.users.set(id, { ...user, id });
+        this.save();
         return id;
     }
 
@@ -29,6 +53,7 @@ class InMemoryDB {
         const user = this.users.get(id);
         if (user) {
             this.users.set(id, { ...user, ...updates });
+            this.save();
             return true;
         }
         return false;
@@ -43,6 +68,7 @@ class InMemoryDB {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         });
+        this.save();
         return id;
     }
 
@@ -68,6 +94,7 @@ class InMemoryDB {
                 ...updates,
                 updated_at: new Date().toISOString()
             });
+            this.save();
             return true;
         }
         return false;
@@ -86,6 +113,7 @@ class InMemoryDB {
             id,
             started_at: new Date().toISOString()
         });
+        this.save();
         return id;
     }
 
@@ -97,6 +125,7 @@ class InMemoryDB {
         const scan = this.networkScans.get(id);
         if (scan) {
             this.networkScans.set(id, { ...scan, ...updates });
+            this.save();
             return true;
         }
         return false;
@@ -116,23 +145,23 @@ class InMemoryDB {
         this.userIdCounter = 1;
         this.deviceIdCounter = 1;
         this.networkScanIdCounter = 1;
+        this.save();
     }
 }
 
 let db = null;
 
-export function initializeDatabase() {
+export async function initializeDatabase() {
     if (!db) {
         db = new InMemoryDB();
+        await db.initialize();
     }
     return db;
 }
 
-export function closeDatabase() {
+export async function closeDatabase() {
     if (db) {
-        db.clear();
+        await db.save();
         db = null;
     }
 }
-
-export default db;

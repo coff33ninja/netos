@@ -1,69 +1,100 @@
-# Welcome to your Lovable project
+# Oasis Topology Scanner
 
-## Project info
+A network topology scanning and visualization tool.
 
-**URL**: https://lovable.dev/projects/e76be8bb-bb3e-488f-8978-7a798fab9502
+## Project Structure
 
-## How can I edit this code?
+The project consists of two main parts:
+- `frontend/`: React-based UI built with Vite, TypeScript, and shadcn-ui
+- `backend/`: Node.js API server with network scanning capabilities
 
-There are several ways of editing your application.
+## Backend Setup
 
-**Use Lovable**
+### Prerequisites
+- Node.js 18+ and npm
+- Network access for scanning functionality
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/e76be8bb-bb3e-488f-8978-7a798fab9502) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+### Installation
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Navigate to backend directory
+cd backend
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Install dependencies
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Start development server
+npm run dev
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Run tests
+npm test
+```
+
+### API Endpoints
+
+#### Users
+- `POST /api/users` - Create a new user
+- `GET /api/users/:id` - Get user by ID
+- `PUT /api/users/:id` - Update user
+
+#### Devices
+- `POST /api/devices` - Add a new device
+- `GET /api/devices` - List all devices
+- `GET /api/devices/:id` - Get device by ID
+- `PUT /api/devices/:id` - Update device
+
+#### Network Scanning
+- `POST /api/network-scan` - Start a new network scan
+- `GET /api/network-scan/:id` - Get scan status
+- `GET /api/network-scan` - Get latest scans
+
+### Example Usage
+
+```powershell
+# Create a user
+Invoke-WebRequest -Method Post -Uri "http://localhost:3001/api/users" -Body '{"username":"admin","password":"secure123","name":"Admin User","email":"admin@example.com"}' -ContentType "application/json"
+
+# Start a network scan
+Invoke-WebRequest -Method Post -Uri "http://localhost:3001/api/network-scan" -Body '{"start_ip":"192.168.1.1","end_ip":"192.168.1.254"}' -ContentType "application/json"
+
+# List all devices
+Invoke-WebRequest -Uri "http://localhost:3001/api/devices"
+```
+
+## Frontend Setup
+
+```sh
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Technologies Used
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Backend:
+- Node.js
+- Express
+- Network scanning tools
+- In-memory database with persistence
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
+Frontend:
 - Vite
 - TypeScript
 - React
 - shadcn-ui
 - Tailwind CSS
 
-## How can I deploy this project?
+## Development
 
-Simply open [Lovable](https://lovable.dev/projects/e76be8bb-bb3e-488f-8978-7a798fab9502) and click on Share -> Publish.
+1. Start the backend server (port 3001)
+2. Start the frontend development server
+3. Access the application at http://localhost:5173
 
-## I want to use a custom domain - is that possible?
+## Deployment
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+For deployment instructions, see [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)

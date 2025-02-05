@@ -1,33 +1,24 @@
 import express from 'express';
 import { initializeDatabase } from '../database/db.js';
+import { scanNetwork } from '../services/networkScanner.js';
 
 const router = express.Router();
 const db = initializeDatabase();
 
 // Start a new network scan
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     try {
         const { start_ip, end_ip } = req.body;
         
-        // Create network scan
-        const scanId = db.createNetworkScan({ 
-            start_ip, 
-            end_ip,
-            status: 'in_progress',
-            devices_found: 0
-        });
-        
-        // In a real application, you would start the actual network scan here
-        // For now, we'll just simulate it by updating the scan after a delay
-        setTimeout(() => {
-            db.updateNetworkScan(scanId, {
-                status: 'completed',
-                devices_found: Math.floor(Math.random() * 10) + 1,
-                completed_at: new Date().toISOString()
-            });
-        }, 5000);
+        // Validate IP addresses
+        if (!isValidIp(start_ip) || !isValidIp(end_ip)) {
+            return res.status(400).json({ error: 'Invalid IP address format' });
+        }
 
+        // Start scan in background
+        const scanId = await scanNetwork(start_ip, end_ip);
         const scan = db.findNetworkScanById(scanId);
+        
         res.status(201).json(scan);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -57,5 +48,16 @@ router.get('/', (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+function isValidIp(ip) {
+    const pattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+    if (!pattern.test(ip)) return false;
+    
+    const parts = ip.split('.');
+    return parts.every(part => {
+        const num = parseInt(part, 10);
+        return num >= 0 && num <= 255;
+    });
+}
 
 export const networkScanRouter = router;
