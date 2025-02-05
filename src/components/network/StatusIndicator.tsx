@@ -1,77 +1,74 @@
+import { useState, useEffect } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { API_BASE_URL } from '@/config/api';
+import { Loader2 } from 'lucide-react';
 
-import { useEffect, useState } from "react";
-import { SystemStatus } from "@/types/network";
-import { startStatusMonitoring, stopStatusMonitoring } from "@/utils/statusMonitor";
-import { useToast } from "@/components/ui/use-toast";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CheckCircle, WifiOff } from "lucide-react";
+interface BackendStatus {
+    status: 'online' | 'offline';
+    version: string;
+    uptime: string;
+}
 
 export const StatusIndicator = () => {
-  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
-  const { toast } = useToast();
+    const [status, setStatus] = useState<BackendStatus | null>(null);
+    const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const cleanup = startStatusMonitoring(
-      (status) => {
-        setSystemStatus(status);
-        
-        // Show toast for backend status changes
-        if (!status.backend.isOnline) {
-          toast({
-            title: "Backend Offline",
-            description: "The backend service is currently unavailable.",
-            variant: "destructive"
-          });
-        }
-      },
-      (alert) => {
-        toast({
-          title: alert.type === "error" ? "Error" : alert.type === "warning" ? "Warning" : "Info",
-          description: alert.message,
-          variant: alert.type === "error" ? "destructive" : "default"
-        });
-      }
+    useEffect(() => {
+        const checkStatus = async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/status`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setStatus(data);
+                } else {
+                    setStatus({ status: 'offline', version: 'N/A', uptime: 'N/A' });
+                }
+            } catch (error) {
+                setStatus({ status: 'offline', version: 'N/A', uptime: 'N/A' });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        checkStatus();
+        const interval = setInterval(checkStatus, 30000); // Check every 30 seconds
+
+        return () => clearInterval(interval);
+    }, []);
+
+    if (loading) {
+        return (
+            <Card className="mb-6">
+                <CardContent className="flex items-center justify-center py-4">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                </CardContent>
+            </Card>
+        );
+    }
+
+    return (
+        <Card className="mb-6">
+            <CardContent className="flex items-center justify-between py-4">
+                <div className="flex items-center space-x-4">
+                    <Badge 
+                        variant={status?.status === 'online' ? 'default' : 'destructive'}
+                        className="capitalize"
+                    >
+                        {status?.status || 'Unknown'}
+                    </Badge>
+                    {status?.status === 'online' && (
+                        <>
+                            <div className="text-sm text-muted-foreground">
+                                Version: <span className="font-medium">{status.version}</span>
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                                Uptime: <span className="font-medium">{status.uptime}</span>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </CardContent>
+        </Card>
     );
-
-    return () => {
-      cleanup();
-      stopStatusMonitoring();
-    };
-  }, []);
-
-  if (!systemStatus) return null;
-
-  return (
-    <Card className="mb-4">
-      <CardContent className="pt-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            {systemStatus.backend.isOnline ? (
-              <CheckCircle className="h-5 w-5 text-green-500" />
-            ) : (
-              <WifiOff className="h-5 w-5 text-red-500" />
-            )}
-            <div>
-              <h3 className="text-sm font-medium">System Status</h3>
-              <p className="text-xs text-muted-foreground">
-                Last checked: {new Date(systemStatus.backend.lastCheck).toLocaleTimeString()}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Badge variant={systemStatus.backend.isOnline ? "default" : "destructive"}>
-              {systemStatus.backend.isOnline ? "Online" : "Offline"}
-            </Badge>
-            {systemStatus.backend.latency && (
-              <Badge variant="secondary">
-                {Math.round(systemStatus.backend.latency)}ms
-              </Badge>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
 };
-

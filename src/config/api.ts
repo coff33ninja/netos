@@ -1,20 +1,14 @@
-export const API_BASE_URL = 'http://localhost:3001/api';
+export const API_BASE_URL = 'http://localhost:3001';
 
 export const API_ENDPOINTS = {
-    devices: {
-        list: '/devices',
-        get: (id: number) => `/devices/${id}`,
-        create: '/devices',
-        update: (id: number) => `/devices/${id}`,
-    },
-    networkScan: {
-        start: '/network-scan',
-        status: (id: number) => `/network-scan/${id}`,
-        latest: '/network-scan',
-    },
-    users: {
-        create: '/users',
-        get: (id: number) => `/users/${id}`,
-        update: (id: number) => `/users/${id}`,
-    },
-};
+    // Network scanning
+    startScan: '/api/network-scan',
+    getScanStatus: (id: number) => `/api/network-scan/${id}`,
+    getLatestScans: '/api/network-scan',
+    
+    // Devices
+    getAllDevices: '/api/devices',
+    getDeviceById: (id: string) => `/api/devices/${id}`,
+    updateDevice: (id: string) => `/api/devices/${id}`,
+    createDevice: '/api/devices',
+} as const;

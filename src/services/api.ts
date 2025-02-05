@@ -1,14 +1,12 @@
-import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
+import { API_BASE_URL, API_ENDPOINTS } from '@/config/api';
 
 export interface Device {
-    id: number;
+    id: string;
     name: string;
     ip: string;
     mac: string | null;
     type: string;
     status: string;
-    created_at: string;
-    updated_at: string;
     last_seen?: string;
 }
 
@@ -16,69 +14,67 @@ export interface NetworkScan {
     id: number;
     start_ip: string;
     end_ip: string;
-    status: 'in_progress' | 'completed' | 'failed';
-    devices_found: number;
-    started_at: string;
-    completed_at?: string;
-    error?: string;
+    status: 'pending' | 'completed' | 'failed';
+    timestamp: string;
+    devices_found?: Device[];
 }
 
-class ApiClient {
+class ApiService {
     private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            ...options,
             headers: {
                 'Content-Type': 'application/json',
                 ...options.headers,
             },
-            ...options,
         });
 
         if (!response.ok) {
-            const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-            throw new Error(error.error || `HTTP error! status: ${response.status}`);
+            const error = await response.json().catch(() => ({ message: 'An error occurred' }));
+            throw new Error(error.message || 'Network response was not ok');
         }
 
         return response.json();
     }
 
-    // Device endpoints
-    async getDevices(): Promise<Device[]> {
-        return this.request(API_ENDPOINTS.devices.list);
-    }
-
-    async getDevice(id: number): Promise<Device> {
-        return this.request(API_ENDPOINTS.devices.get(id));
-    }
-
-    async createDevice(device: Omit<Device, 'id' | 'created_at' | 'updated_at'>): Promise<Device> {
-        return this.request(API_ENDPOINTS.devices.create, {
-            method: 'POST',
-            body: JSON.stringify(device),
-        });
-    }
-
-    async updateDevice(id: number, updates: Partial<Device>): Promise<Device> {
-        return this.request(API_ENDPOINTS.devices.update(id), {
-            method: 'PUT',
-            body: JSON.stringify(updates),
-        });
-    }
-
-    // Network scan endpoints
+    // Network Scanning
     async startNetworkScan(startIp: string, endIp: string): Promise<NetworkScan> {
-        return this.request(API_ENDPOINTS.networkScan.start, {
+        return this.request<NetworkScan>(API_ENDPOINTS.startScan, {
             method: 'POST',
             body: JSON.stringify({ start_ip: startIp, end_ip: endIp }),
         });
     }
 
-    async getNetworkScanStatus(id: number): Promise<NetworkScan> {
-        return this.request(API_ENDPOINTS.networkScan.status(id));
+    async getScanStatus(scanId: number): Promise<NetworkScan> {
+        return this.request<NetworkScan>(API_ENDPOINTS.getScanStatus(scanId));
     }
 
-    async getLatestNetworkScans(): Promise<NetworkScan[]> {
-        return this.request(API_ENDPOINTS.networkScan.latest);
+    async getLatestScans(limit: number = 10): Promise<NetworkScan[]> {
+        return this.request<NetworkScan[]>(`${API_ENDPOINTS.getLatestScans}?limit=${limit}`);
+    }
+
+    // Devices
+    async getAllDevices(): Promise<Device[]> {
+        return this.request<Device[]>(API_ENDPOINTS.getAllDevices);
+    }
+
+    async getDeviceById(id: string): Promise<Device> {
+        return this.request<Device>(API_ENDPOINTS.getDeviceById(id));
+    }
+
+    async createDevice(device: Omit<Device, 'id'>): Promise<Device> {
+        return this.request<Device>(API_ENDPOINTS.createDevice, {
+            method: 'POST',
+            body: JSON.stringify(device),
+        });
+    }
+
+    async updateDevice(id: string, data: Partial<Omit<Device, 'id' | 'ip' | 'mac'>>): Promise<Device> {
+        return this.request<Device>(API_ENDPOINTS.updateDevice(id), {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
     }
 }
 
-export const api = new ApiClient();
+export const api = new ApiService();

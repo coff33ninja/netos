@@ -1,99 +1,85 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { AlertTriangle, WifiOff, Zap, Server } from "lucide-react";
-
-interface Alert {
-  id: number;
-  type: 'error' | 'warning' | 'info';
-  message: string;
-  timestamp: string;
-  device?: string;
-}
+import { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { AlertTriangle, Info, AlertOctagon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface AlertSystemProps {
-  currentPage: number;
-  itemsPerPage: number;
+    currentPage: number;
+    itemsPerPage: number;
 }
 
-const alerts: Alert[] = [
-  {
-    id: 1,
-    type: 'error',
-    message: 'Server connection lost',
-    timestamp: '2 minutes ago',
-    device: 'Main Server'
-  },
-  {
-    id: 2,
-    type: 'warning',
-    message: 'High network latency detected',
-    timestamp: '5 minutes ago'
-  },
-  {
-    id: 3,
-    type: 'info',
-    message: 'New device connected',
-    timestamp: '10 minutes ago',
-    device: 'Unknown Device'
-  }
-];
-
-const getAlertIcon = (type: Alert['type']) => {
-  switch (type) {
-    case 'error':
-      return <WifiOff className="h-4 w-4 text-destructive" />;
-    case 'warning':
-      return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-    case 'info':
-      return <Server className="h-4 w-4 text-blue-500" />;
-  }
-};
-
-const getAlertBadgeVariant = (type: Alert['type']) => {
-  switch (type) {
-    case 'error':
-      return 'destructive';
-    case 'warning':
-      return 'default';
-    case 'info':
-      return 'secondary';
-  }
-};
+interface Alert {
+    id: string;
+    title: string;
+    description: string;
+    severity: 'low' | 'medium' | 'high';
+    timestamp: string;
+}
 
 export const AlertSystem = ({ currentPage, itemsPerPage }: AlertSystemProps) => {
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedAlerts = alerts.slice(startIndex, startIndex + itemsPerPage);
+    const [alerts] = useState<Alert[]>([
+        {
+            id: '1',
+            title: 'High Network Load',
+            description: 'Network load has exceeded 80%',
+            severity: 'high',
+            timestamp: '2024-02-20T10:00:00'
+        },
+        {
+            id: '2',
+            title: 'New Device Detected',
+            description: 'Unknown device connected to network',
+            severity: 'medium',
+            timestamp: '2024-02-20T09:45:00'
+        },
+        {
+            id: '3',
+            title: 'System Update Available',
+            description: 'New system update is available',
+            severity: 'low',
+            timestamp: '2024-02-20T09:30:00'
+        }
+    ]);
 
-  return (
-    <ScrollArea className="h-[300px] pr-4">
-      <div className="space-y-4">
-        {paginatedAlerts.map((alert) => (
-          <div
-            key={alert.id}
-            className="flex items-start space-x-4 rounded-lg border p-3"
-          >
-            {getAlertIcon(alert.type)}
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">{alert.message}</p>
-                <Badge variant={getAlertBadgeVariant(alert.type)}>
-                  {alert.type}
-                </Badge>
-              </div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                <span>{alert.timestamp}</span>
-                {alert.device && (
-                  <>
-                    <span className="mx-1">•</span>
-                    <span>{alert.device}</span>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </ScrollArea>
-  );
+    const getAlertIcon = (severity: Alert['severity']) => {
+        switch (severity) {
+            case 'high':
+                return <AlertOctagon className="h-5 w-5 text-red-500" />;
+            case 'medium':
+                return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+            case 'low':
+                return <Info className="h-5 w-5 text-blue-500" />;
+        }
+    };
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentAlerts = alerts.slice(startIndex, endIndex);
+
+    return (
+        <div className="space-y-4">
+            {currentAlerts.map((alert) => (
+                <Card key={alert.id}>
+                    <CardContent className="flex items-start space-x-4 p-4">
+                        {getAlertIcon(alert.severity)}
+                        <div className="flex-1 space-y-1">
+                            <div className="flex justify-between items-start">
+                                <p className="text-sm font-medium">{alert.title}</p>
+                                <Button variant="ghost" size="sm">
+                                    Dismiss
+                                </Button>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{alert.description}</p>
+                            <p className="text-xs text-muted-foreground">
+                                {new Date(alert.timestamp).toLocaleString()}
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
+            {currentAlerts.length === 0 && (
+                <p className="text-center text-sm text-muted-foreground">No active alerts</p>
+            )}
+        </div>
+    );
 };
