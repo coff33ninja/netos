@@ -1,44 +1,27 @@
 import express from 'express';
 import cors from 'cors';
-import passport from 'passport';
-import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
-import { serverConfig } from './config/server.config.js';
+import { createServer } from 'http';
+import { initializeWebSocket } from './src/services/websocket.js';
+import { deviceRouter } from './src/routes/devices.js';
+import { networkScanRouter } from './src/routes/networkScan.js';
+import { userRouter } from './src/routes/users.js';
 
 const app = express();
+const server = createServer(app);
+
+// Initialize WebSocket
+initializeWebSocket(server);
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(passport.initialize());
 
-// Configure JWT strategy
-const jwtOptions = {
-    jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-    secretOrKey: serverConfig.jwtSecret
-};
+// Routes
+app.use('/api/devices', deviceRouter);
+app.use('/api/network-scan', networkScanRouter);
+app.use('/api/users', userRouter);
 
-passport.use(new JwtStrategy(jwtOptions, (jwt_payload, done) => {
-    // This is where you would typically look up the user in your database
-    return done(null, jwt_payload);
-}));
-
-// Basic routes
-app.get('/', (req, res) => {
-    res.json({ message: 'Backend API is running' });
-});
-
-app.get('/api/protected',
-    passport.authenticate('jwt', { session: false }),
-    (req, res) => {
-        res.json({
-            message: 'You have access to protected endpoint',
-            user: req.user
-        });
-    }
-);
-
-// Start server
-const port = serverConfig.port;
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });

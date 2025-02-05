@@ -1,230 +1,204 @@
-
-import { useEffect, useState } from "react";
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Monitor, Settings, Activity, Network, Link2, Computer, Power } from "lucide-react";
-import { DeviceInfo } from "@/types/network";
-import { getDevices } from "@/utils/database";
-import { performScan } from "@/utils/scanner";
-import { wakeDevice } from "@/utils/wol";
-import { useToast } from "@/components/ui/use-toast";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
+import { ChevronDown, ArrowUpDown } from 'lucide-react';
+import { api, Device } from '../../services/api';
+import { useToast } from '../ui/use-toast';
+import { useWebSocket } from '../../hooks/useWebSocket';
+import { DeviceDetails } from './DeviceDetails';
 
-interface DeviceListProps {
-  currentPage: number;
-  itemsPerPage: number;
+type SortField = 'name' | 'ip' | 'type' | 'status' | 'last_seen';
+type SortOrder = 'asc' | 'desc';
+
+export function DeviceList() {
+    const { devices, currentScan } = useWebSocket();
+    const [search, setSearch] = useState('');
+    const [sortField, setSortField] = useState<SortField>('name');
+    const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+    const [typeFilter, setTypeFilter] = useState<string>('all');
+    const [statusFilter, setStatusFilter] = useState<string>('all');
+    const { toast } = useToast();
+
+    const startScan = async () => {
+        try {
+            const scan = await api.startNetworkScan('192.168.1.1', '192.168.1.254');
+            toast({
+                title: 'Scan Started',
+                description: `Scanning network from ${scan.start_ip} to ${scan.end_ip}`,
+            });
+        } catch (error) {
+            toast({
+                title: 'Error',
+                description: 'Failed to start network scan',
+                variant: 'destructive',
+            });
+        }
+    };
+
+    const handleDeviceUpdate = (updated: Device) => {
+        // WebSocket will handle the update in the UI
+        toast({
+            title: 'Success',
+            description: 'Device updated successfully',
+        });
+    };
+
+    // Get unique device types and statuses for filters
+    const deviceTypes = ['all', ...new Set(devices.map(d => d.type))];
+    const deviceStatuses = ['all', ...new Set(devices.map(d => d.status))];
+
+    // Apply filters and sorting
+    const filteredDevices = devices
+        .filter(device => {
+            const matchesSearch = 
+                device.name.toLowerCase().includes(search.toLowerCase()) ||
+                device.ip.toLowerCase().includes(search.toLowerCase()) ||
+                device.type.toLowerCase().includes(search.toLowerCase());
+            
+            const matchesType = typeFilter === 'all' || device.type === typeFilter;
+            const matchesStatus = statusFilter === 'all' || device.status === statusFilter;
+            
+            return matchesSearch && matchesType && matchesStatus;
+        })
+        .sort((a, b) => {
+            const aValue = a[sortField];
+            const bValue = b[sortField];
+            const modifier = sortOrder === 'asc' ? 1 : -1;
+            
+            if (aValue < bValue) return -1 * modifier;
+            if (aValue > bValue) return 1 * modifier;
+            return 0;
+        });
+
+    const toggleSort = (field: SortField) => {
+        if (sortField === field) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortOrder('asc');
+        }
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex justify-between items-center">
+                    <span>Network Devices</span>
+                    <Button onClick={startScan} disabled={currentScan?.status === 'in_progress'}>
+                        {currentScan?.status === 'in_progress' ? 'Scanning...' : 'Scan Network'}
+                    </Button>
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="flex gap-4 mb-4">
+                    <Input
+                        placeholder="Search devices..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="max-w-sm"
+                    />
+                    
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline">
+                                Type: {typeFilter} <ChevronDown className="ml-2 h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            {deviceTypes.map(type => (
+                                <DropdownMenuItem
+                                    key={type}
+                                    onClick={() => setTypeFilter(type)}
+                                >
+                                    {type}
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline">
+                                Status: {statusFilter} <ChevronDown className="ml-2 h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            {deviceStatuses.map(status => (
+                                <DropdownMenuItem
+                                    key={status}
+                                    onClick={() => setStatusFilter(status)}
+                                >
+                                    {status}
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead onClick={() => toggleSort('name')} className="cursor-pointer">
+                                Name <ArrowUpDown className="inline ml-2 h-4 w-4" />
+                            </TableHead>
+                            <TableHead onClick={() => toggleSort('ip')} className="cursor-pointer">
+                                IP Address <ArrowUpDown className="inline ml-2 h-4 w-4" />
+                            </TableHead>
+                            <TableHead onClick={() => toggleSort('type')} className="cursor-pointer">
+                                Type <ArrowUpDown className="inline ml-2 h-4 w-4" />
+                            </TableHead>
+                            <TableHead onClick={() => toggleSort('status')} className="cursor-pointer">
+                                Status <ArrowUpDown className="inline ml-2 h-4 w-4" />
+                            </TableHead>
+                            <TableHead onClick={() => toggleSort('last_seen')} className="cursor-pointer">
+                                Last Seen <ArrowUpDown className="inline ml-2 h-4 w-4" />
+                            </TableHead>
+                            <TableHead>Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {filteredDevices.map((device) => (
+                            <TableRow key={device.id}>
+                                <TableCell>{device.name}</TableCell>
+                                <TableCell>{device.ip}</TableCell>
+                                <TableCell>{device.type}</TableCell>
+                                <TableCell>
+                                    <span className={`px-2 py-1 rounded-full text-xs ${
+                                        device.status === 'Online' 
+                                            ? 'bg-green-100 text-green-800' 
+                                            : 'bg-gray-100 text-gray-800'
+                                    }`}>
+                                        {device.status}
+                                    </span>
+                                </TableCell>
+                                <TableCell>
+                                    {device.last_seen
+                                        ? new Date(device.last_seen).toLocaleString()
+                                        : 'Never'}
+                                </TableCell>
+                                <TableCell>
+                                    <DeviceDetails device={device} onUpdate={handleDeviceUpdate} />
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                        {filteredDevices.length === 0 && (
+                            <TableRow>
+                                <TableCell colSpan={6} className="text-center">
+                                    No devices found matching the current filters.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    );
 }
-
-export const DeviceList = ({ currentPage, itemsPerPage }: DeviceListProps) => {
-  const [devices, setDevices] = useState<DeviceInfo[]>([]);
-  const [isScanning, setIsScanning] = useState(false);
-  const { toast } = useToast();
-
-  const loadDevices = async () => {
-    try {
-      const deviceList = await getDevices();
-      setDevices(deviceList);
-    } catch (error) {
-      console.error('Error loading devices:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load device list",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleScan = async () => {
-    setIsScanning(true);
-    try {
-      const result = await performScan();
-      toast({
-        title: "Scan Complete",
-        description: `Found ${result.devicesFound} devices in ${result.duration}ms`,
-      });
-      await loadDevices();
-    } catch (error) {
-      toast({
-        title: "Scan Failed",
-        description: "Failed to complete network scan",
-        variant: "destructive"
-      });
-    } finally {
-      setIsScanning(false);
-    }
-  };
-
-  const handleWakeDevice = async (mac: string | undefined, deviceName: string) => {
-    if (!mac) {
-      toast({
-        title: "Error",
-        description: "No MAC address available for this device",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      const result = await wakeDevice(mac, deviceName);
-      toast({
-        title: result.success ? "Success" : "Error",
-        description: result.message,
-        variant: result.success ? "default" : "destructive"
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to wake device",
-        variant: "destructive"
-      });
-    }
-  };
-
-  useEffect(() => {
-    loadDevices();
-  }, []);
-
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedDevices = devices.slice(startIndex, startIndex + itemsPerPage);
-
-  const getStatusColor = (status: DeviceInfo['status']) => {
-    switch (status) {
-      case "Online":
-        return "bg-green-100 text-green-800";
-      case "Offline":
-        return "bg-red-100 text-red-800";
-      case "Warning":
-        return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Connected Devices</h2>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline"
-            onClick={() => loadDevices()}
-          >
-            <Activity className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-          <Button 
-            onClick={handleScan} 
-            disabled={isScanning}
-          >
-            <Network className="mr-2 h-4 w-4" />
-            {isScanning ? "Scanning..." : "Scan Network"}
-          </Button>
-        </div>
-      </div>
-
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Device Info</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Connection</TableHead>
-            <TableHead>Monitoring</TableHead>
-            <TableHead>Remote Access</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {paginatedDevices.map((device) => (
-            <TableRow key={device.id}>
-              <TableCell>
-                <div className="flex flex-col">
-                  <span className="font-medium">{device.name}</span>
-                  <span className="text-sm text-muted-foreground">{device.ip}</span>
-                  <span className="text-xs text-muted-foreground">{device.manufacturer}</span>
-                </div>
-              </TableCell>
-              <TableCell>
-                <HoverCard>
-                  <HoverCardTrigger>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(device.status)}`}>
-                      {device.status}
-                    </span>
-                  </HoverCardTrigger>
-                  <HoverCardContent>
-                    <div className="flex flex-col gap-2">
-                      <p className="text-sm font-medium">Last Seen: {device.lastSeen}</p>
-                      <p className="text-sm">Location: {device.location || 'Unknown'}</p>
-                      <p className="text-sm">OS: {device.osVersion || 'Unknown'}</p>
-                    </div>
-                  </HoverCardContent>
-                </HoverCard>
-              </TableCell>
-              <TableCell>
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm">Ports: {device.ports?.join(", ") || "None"}</span>
-                  <Button variant="ghost" size="sm" className="w-full justify-start">
-                    <Link2 className="h-4 w-4 mr-2" />
-                    Port Monitor
-                  </Button>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex flex-col gap-1">
-                  <Button variant="ghost" size="sm" className="w-full justify-start">
-                    <Activity className="h-4 w-4 mr-2" />
-                    Continuous Ping
-                  </Button>
-                  <Button variant="ghost" size="sm" className="w-full justify-start">
-                    <Computer className="h-4 w-4 mr-2" />
-                    Service Check
-                  </Button>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex flex-col gap-1">
-                  <Button variant="ghost" size="sm" className="w-full justify-start" 
-                    disabled={device.status === "Offline"}>
-                    <Monitor className="h-4 w-4 mr-2" />
-                    RDP
-                  </Button>
-                  <Button variant="ghost" size="sm" className="w-full justify-start"
-                    disabled={device.status === "Offline"}>
-                    <Link2 className="h-4 w-4 mr-2" />
-                    AnyDesk/RustDesk
-                  </Button>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex flex-col gap-1">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleWakeDevice(device.mac, device.name)}
-                  >
-                    <Power className="h-4 w-4 mr-2" />
-                    WOL
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Configure
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
-};
