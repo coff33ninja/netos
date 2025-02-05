@@ -1,17 +1,25 @@
-import { DeviceList } from './components/network/DeviceList';
-import { NetworkMap } from './components/network/NetworkMap';
+import { Routes, Route } from 'react-router-dom';
+import NavigationMenu from './components/navigation/NavigationMenu';
+import Index from './pages/Index';
+import Devices from './pages/Devices';
+import Nodes from './pages/Nodes';
+import Settings from './pages/Settings';
+import NotFound from './pages/NotFound';
 import { Toaster } from './components/ui/toaster';
 
 function App() {
     return (
-        <div className="container mx-auto p-4">
-            <h1 className="text-3xl font-bold mb-8">Network Topology Scanner</h1>
-            
-            <div className="grid gap-8">
-                <NetworkMap />
-                <DeviceList />
-            </div>
-
+        <div className="min-h-screen bg-background">
+            <NavigationMenu />
+            <main>
+                <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/devices" element={<Devices />} />
+                    <Route path="/nodes" element={<Nodes />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="*" element={<NotFound />} />
+                </Routes>
+            </main>
             <Toaster />
         </div>
     );
