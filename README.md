@@ -63,23 +63,67 @@ A real-time network topology visualization and management tool built with React,
    ```bash
    npm install
    ```
+   This will install:
+   - Express and CORS for the API server
+   - WebSocket (ws) for real-time communication
+   - Jest and Nodemon for development
 
 3. Install additional packages:
    ```bash
    npm install ws express cors
    ```
 
-4. Create configuration (if not exists):
+3. Create configuration:
    ```bash
-   cp config.example.js config.js
+   # Create config.js manually with the following content:
+   
+   export const serverConfig = {
+       port: process.env.PORT || 3001,
+       jwtSecret: process.env.JWT_SECRET || 'your-secret-key',
+       corsOrigin: process.env.CORS_ORIGIN || '*',
+       environment: process.env.NODE_ENV || 'development',
+       dbPath: './database.db'
+   };
+   
+   export const dbConfig = {
+       path: './database.db',
+       migrations: './src/database/migrations',
+       seeders: './src/database/seeders'
+   };
    ```
-   Edit `config.js` with your network settings.
 
-5. Start the server:
+4. Start the server:
    ```bash
+   # For development with auto-reload:
+   npm run dev
+   
+   # For production:
    npm start
    ```
    Server runs on port 3001 by default.
+
+### Frontend Setup
+1. From project root:
+   ```bash
+   npm install
+   ```
+   This will install all required dependencies including:
+   - Vite and React dependencies
+   - TypeScript support
+   - Tailwind CSS and its dependencies
+   - React Force Graph
+   - UI components from shadcn/ui
+
+2. Install additional dependencies:
+   ```bash
+   npm install react-force-graph
+   ```
+
+3. Start development server:
+   ```bash
+   npm run dev
+   ```
+   Frontend runs on port 8080 by default (configured in vite.config.ts).
 
 ### Frontend Setup
 1. From project root:

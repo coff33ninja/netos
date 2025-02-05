@@ -2,11 +2,11 @@ import express from 'express';
 import { initializeDatabase } from '../database/db.js';
 
 const router = express.Router();
-const db = initializeDatabase();
 
 // Create a new device
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     try {
+        const db = await initializeDatabase();
         const { name, ip, mac, type, status } = req.body;
         
         // Check if device with same IP or MAC already exists
@@ -31,8 +31,9 @@ router.post('/', (req, res) => {
 });
 
 // Get all devices
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     try {
+        const db = await initializeDatabase();
         const devices = db.getAllDevices();
         res.json(devices);
     } catch (error) {
@@ -41,8 +42,9 @@ router.get('/', (req, res) => {
 });
 
 // Get device by ID
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
     try {
+        const db = await initializeDatabase();
         const device = db.findDeviceById(parseInt(req.params.id));
         if (!device) {
             return res.status(404).json({ error: 'Device not found' });
@@ -54,8 +56,9 @@ router.get('/:id', (req, res) => {
 });
 
 // Update device
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
     try {
+        const db = await initializeDatabase();
         const deviceId = parseInt(req.params.id);
         const { name, type, status } = req.body;
 

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { api } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 
@@ -7,63 +7,85 @@ interface NetworkScan {
     start_ip: string;
     end_ip: string;
     status: 'pending' | 'completed' | 'failed';
-    timestamp: string;
-    results?: any[];
+    devices_found?: Array<{
+        ip: string;
+        mac: string | null;
+        type: string;
+        manufacturer?: string;
+        resolvedName?: string;
+    }>;
+    error?: string;
 }
 
 export function useNetworkScan() {
-    const [currentScan, setCurrentScan] = useState<NetworkScan | null>(null);
     const [isScanning, setIsScanning] = useState(false);
+    const [currentScan, setCurrentScan] = useState<NetworkScan | null>(null);
     const { toast } = useToast();
 
-    const startScan = useCallback(async (startIp: string, endIp: string) => {
-        setIsScanning(true);
+    const startScan = async (startIp: string, endIp: string) => {
         try {
-            const scan = await api.startNetworkScan(startIp, endIp);
-            setCurrentScan(scan);
-            toast({
-                title: "Scan Started",
-                description: `Scanning network from ${startIp} to ${endIp}`,
+            setIsScanning(true);
+            console.log('Starting network scan:', { startIp, endIp });
+            
+            const scan = await api.startNetworkScan({
+                start_ip: startIp,  // Changed to match backend's expected format
+                end_ip: endIp       // Changed to match backend's expected format
             });
+            console.log('Scan started:', scan);
+            setCurrentScan(scan);
 
-            // Poll for scan status
+            // Start polling for status
             const checkStatus = async () => {
-                const updatedScan = await api.getScanStatus(scan.id);
-                setCurrentScan(updatedScan);
+                try {
+                    console.log('Checking scan status for ID:', scan.id);
+                    const updatedScan = await api.getScanStatus(scan.id);
+                    console.log('Updated scan status:', updatedScan);
+                    setCurrentScan(updatedScan);
 
-                if (updatedScan.status === 'completed') {
+                    if (updatedScan.status === 'completed') {
+                        setIsScanning(false);
+                        toast({
+                            title: "Scan Complete",
+                            description: `Found ${updatedScan.devices_found?.length || 0} devices`,
+                        });
+                    } else if (updatedScan.status === 'failed') {
+                        setIsScanning(false);
+                        toast({
+                            title: "Scan Failed",
+                            description: updatedScan.error || "Network scan failed to complete",
+                            variant: "destructive",
+                        });
+                    } else {
+                        // Continue polling if scan is still pending
+                        setTimeout(checkStatus, 2000);
+                    }
+                } catch (error) {
+                    console.error('Error checking scan status:', error);
                     setIsScanning(false);
                     toast({
-                        title: "Scan Complete",
-                        description: `Found ${updatedScan.results?.length || 0} devices`,
-                    });
-                } else if (updatedScan.status === 'failed') {
-                    setIsScanning(false);
-                    toast({
-                        title: "Scan Failed",
-                        description: "Network scan failed to complete",
+                        title: "Error",
+                        description: error instanceof Error ? error.message : "Failed to check scan status",
                         variant: "destructive",
                     });
-                } else {
-                    // Continue polling if scan is still pending
-                    setTimeout(checkStatus, 2000);
                 }
             };
 
-            checkStatus();
+            // Start polling
+            setTimeout(checkStatus, 1000);
         } catch (error) {
+            console.error('Error starting network scan:', error);
             setIsScanning(false);
             toast({
                 title: "Error",
-                description: "Failed to start network scan",
+                description: error instanceof Error ? error.message : "Failed to start network scan",
                 variant: "destructive",
             });
         }
-    }, [toast]);
+    };
 
     return {
-        currentScan,
         isScanning,
         startScan,
+        currentScan
     };
 }

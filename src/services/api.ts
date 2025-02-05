@@ -1,107 +1,74 @@
-import { API_ENDPOINTS } from '@/config/api';
-
-export interface Device {
-    id?: string;
-    name: string;
-    ip: string;
-    mac: string | null;
-    type: string;
-    status: 'online' | 'offline';
-    last_seen?: string;
-}
-
-export interface NetworkScan {
-    id: number;
-    start_ip: string;
-    end_ip: string;
-    status: 'pending' | 'completed' | 'failed';
-    timestamp: string;
-    devices_found?: Device[];
-}
+import { API_ENDPOINTS, handleApiResponse } from '@/config/api';
+import type { Device } from '@/types/api';
 
 class ApiService {
-    private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-        try {
-            console.log(`Making ${options.method || 'GET'} request to:`, endpoint);
-            if (options.body) {
-                console.log('Request body:', options.body);
-            }
-
-            const response = await fetch(endpoint, {
-                ...options,
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...options.headers,
-                },
-            });
-
-            const responseData = await response.json().catch(() => null);
-            console.log('Response status:', response.status);
-            console.log('Response data:', responseData);
-
-            if (!response.ok) {
-                throw new Error(
-                    responseData?.message || 
-                    `HTTP error! status: ${response.status} - ${response.statusText}`
-                );
-            }
-
-            return responseData;
-        } catch (error) {
-            console.error('API request failed:', error);
-            throw error;
-        }
-    }
-
-    // Network Scanning
-    async startNetworkScan(startIp: string, endIp: string): Promise<NetworkScan> {
-        return this.request<NetworkScan>(API_ENDPOINTS.startScan, {
-            method: 'POST',
-            body: JSON.stringify({ start_ip: startIp, end_ip: endIp }),
-        });
-    }
-
-    async getScanStatus(scanId: number): Promise<NetworkScan> {
-        return this.request<NetworkScan>(API_ENDPOINTS.getScanStatus(scanId));
-    }
-
-    async getLatestScans(limit: number = 10): Promise<NetworkScan[]> {
-        return this.request<NetworkScan[]>(`${API_ENDPOINTS.getLatestScans}?limit=${limit}`);
-    }
-
-    // Devices
     async getAllDevices(): Promise<Device[]> {
-        return this.request<Device[]>(API_ENDPOINTS.getAllDevices);
+        console.log('Making GET request to:', API_ENDPOINTS.getAllDevices);
+        const response = await fetch(API_ENDPOINTS.getAllDevices);
+        console.log('Response status:', response.status);
+        return handleApiResponse<Device[]>(response);
     }
 
     async getDeviceById(id: string): Promise<Device> {
-        return this.request<Device>(API_ENDPOINTS.getDeviceById(id));
+        const response = await fetch(API_ENDPOINTS.getDeviceById(id));
+        return handleApiResponse<Device>(response);
     }
 
-    async createDevice(deviceData: Omit<Device, 'id'>): Promise<Device> {
-        // Ensure status is set
-        const device = {
-            ...deviceData,
-            status: deviceData.status || 'online',
-        };
-
-        return this.request<Device>(API_ENDPOINTS.createDevice, {
+    async createDevice(device: Omit<Device, 'id'>): Promise<Device> {
+        const response = await fetch(API_ENDPOINTS.createDevice, {
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
             body: JSON.stringify(device),
         });
+        return handleApiResponse<Device>(response);
     }
 
-    async updateDevice(id: string, data: Partial<Omit<Device, 'id' | 'ip' | 'mac'>>): Promise<Device> {
-        return this.request<Device>(API_ENDPOINTS.updateDevice(id), {
+    async updateDevice(id: string, updates: Partial<Device>): Promise<Device> {
+        const response = await fetch(API_ENDPOINTS.updateDevice(id), {
             method: 'PUT',
-            body: JSON.stringify(data),
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updates),
         });
+        return handleApiResponse<Device>(response);
     }
 
     async deleteDevice(id: string): Promise<void> {
-        return this.request<void>(API_ENDPOINTS.deleteDevice(id), {
+        const response = await fetch(API_ENDPOINTS.deleteDevice(id), {
             method: 'DELETE',
         });
+        return handleApiResponse<void>(response);
+    }
+
+    async deleteAllDevices(): Promise<void> {
+        const response = await fetch(API_ENDPOINTS.getAllDevices, {
+            method: 'DELETE',
+        });
+        return handleApiResponse<void>(response);
+    }
+
+    async startNetworkScan(params: { start_ip: string; end_ip: string }): Promise<{ id: number }> {
+        const response = await fetch(API_ENDPOINTS.startScan, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(params),
+        });
+        return handleApiResponse<{ id: number }>(response);
+    }
+
+    async getScanStatus(id: number): Promise<any> {
+        const response = await fetch(API_ENDPOINTS.getScanStatus(id));
+        return handleApiResponse(response);
+    }
+
+    async getLatestScans(): Promise<any[]> {
+        const response = await fetch(API_ENDPOINTS.getLatestScans);
+        return handleApiResponse(response);
     }
 }
 

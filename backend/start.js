@@ -1,21 +1,28 @@
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 import { spawn } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Start the server
-const server = spawn('node', ['test.js'], {
+const server = spawn('node', ['src/index.js'], {
     cwd: __dirname,
-    stdio: 'inherit'
+    stdio: 'inherit',
+    shell: true
 });
 
 server.on('error', (err) => {
     console.error('Failed to start server:', err);
+    process.exit(1);
 });
 
+// Handle graceful shutdown
 process.on('SIGINT', () => {
-    server.kill();
-    process.exit();
+    server.kill('SIGINT');
+    process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+    server.kill('SIGTERM');
+    process.exit(0);
 });
