@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import {
   Table,
@@ -25,9 +26,9 @@ export const DeviceList = ({ currentPage, itemsPerPage }: DeviceListProps) => {
   const [isScanning, setIsScanning] = useState(false);
   const { toast } = useToast();
 
-  const loadDevices = () => {
+  const loadDevices = async () => {
     try {
-      const deviceList = getDevices();
+      const deviceList = await getDevices();
       setDevices(deviceList);
     } catch (error) {
       console.error('Error loading devices:', error);
@@ -47,7 +48,7 @@ export const DeviceList = ({ currentPage, itemsPerPage }: DeviceListProps) => {
         title: "Scan Complete",
         description: `Found ${result.devicesFound} devices in ${result.duration}ms`,
       });
-      loadDevices();
+      await loadDevices();
     } catch (error) {
       toast({
         title: "Scan Failed",
