@@ -1,12 +1,12 @@
-import { API_BASE_URL, API_ENDPOINTS } from '@/config/api';
+import { API_ENDPOINTS } from '@/config/api';
 
 export interface Device {
-    id: string;
+    id?: string;
     name: string;
     ip: string;
     mac: string | null;
     type: string;
-    status: string;
+    status: 'online' | 'offline';
     last_seen?: string;
 }
 
@@ -21,20 +21,36 @@ export interface NetworkScan {
 
 class ApiService {
     private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-            ...options,
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
-        });
+        try {
+            console.log(`Making ${options.method || 'GET'} request to:`, endpoint);
+            if (options.body) {
+                console.log('Request body:', options.body);
+            }
 
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({ message: 'An error occurred' }));
-            throw new Error(error.message || 'Network response was not ok');
+            const response = await fetch(endpoint, {
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers,
+                },
+            });
+
+            const responseData = await response.json().catch(() => null);
+            console.log('Response status:', response.status);
+            console.log('Response data:', responseData);
+
+            if (!response.ok) {
+                throw new Error(
+                    responseData?.message || 
+                    `HTTP error! status: ${response.status} - ${response.statusText}`
+                );
+            }
+
+            return responseData;
+        } catch (error) {
+            console.error('API request failed:', error);
+            throw error;
         }
-
-        return response.json();
     }
 
     // Network Scanning
@@ -62,7 +78,13 @@ class ApiService {
         return this.request<Device>(API_ENDPOINTS.getDeviceById(id));
     }
 
-    async createDevice(device: Omit<Device, 'id'>): Promise<Device> {
+    async createDevice(deviceData: Omit<Device, 'id'>): Promise<Device> {
+        // Ensure status is set
+        const device = {
+            ...deviceData,
+            status: deviceData.status || 'online',
+        };
+
         return this.request<Device>(API_ENDPOINTS.createDevice, {
             method: 'POST',
             body: JSON.stringify(device),
@@ -73,6 +95,12 @@ class ApiService {
         return this.request<Device>(API_ENDPOINTS.updateDevice(id), {
             method: 'PUT',
             body: JSON.stringify(data),
+        });
+    }
+
+    async deleteDevice(id: string): Promise<void> {
+        return this.request<void>(API_ENDPOINTS.deleteDevice(id), {
+            method: 'DELETE',
         });
     }
 }

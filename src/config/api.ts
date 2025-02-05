@@ -1,5 +1,4 @@
-export const API_BASE_URL = 'http://localhost:3001';
-
+// Using relative URLs since we're proxying through Vite
 export const API_ENDPOINTS = {
     // Network scanning
     startScan: '/api/network-scan',
@@ -11,4 +10,8 @@ export const API_ENDPOINTS = {
     getDeviceById: (id: string) => `/api/devices/${id}`,
     updateDevice: (id: string) => `/api/devices/${id}`,
     createDevice: '/api/devices',
+    deleteDevice: (id: string) => `/api/devices/${id}`,
+
+    // Status
+    status: '/api/status'
 } as const;

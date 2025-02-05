@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { API_BASE_URL } from '@/config/api';
+import { API_ENDPOINTS } from '@/config/api';
 import { Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface BackendStatus {
     status: 'online' | 'offline';
@@ -13,19 +14,32 @@ interface BackendStatus {
 export const StatusIndicator = () => {
     const [status, setStatus] = useState<BackendStatus | null>(null);
     const [loading, setLoading] = useState(true);
+    const { toast } = useToast();
 
     useEffect(() => {
         const checkStatus = async () => {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/status`);
+                const response = await fetch(API_ENDPOINTS.status);
                 if (response.ok) {
                     const data = await response.json();
                     setStatus(data);
                 } else {
+                    console.error('Backend status check failed:', response.status);
                     setStatus({ status: 'offline', version: 'N/A', uptime: 'N/A' });
+                    toast({
+                        title: "Connection Error",
+                        description: "Could not connect to the backend service",
+                        variant: "destructive",
+                    });
                 }
             } catch (error) {
+                console.error('Backend status check error:', error);
                 setStatus({ status: 'offline', version: 'N/A', uptime: 'N/A' });
+                toast({
+                    title: "Connection Error",
+                    description: "Could not connect to the backend service",
+                    variant: "destructive",
+                });
             } finally {
                 setLoading(false);
             }
@@ -35,7 +49,7 @@ export const StatusIndicator = () => {
         const interval = setInterval(checkStatus, 30000); // Check every 30 seconds
 
         return () => clearInterval(interval);
-    }, []);
+    }, [toast]);
 
     if (loading) {
         return (

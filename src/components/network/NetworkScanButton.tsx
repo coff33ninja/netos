@@ -11,19 +11,45 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import { useNetworkScan } from '@/hooks/useNetworkScan';
+import { api } from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
 import { Loader2, Network } from 'lucide-react';
 
 export const NetworkScanButton = () => {
     const [open, setOpen] = useState(false);
     const [startIp, setStartIp] = useState('192.168.1.1');
     const [endIp, setEndIp] = useState('192.168.1.254');
-    const { isScanning, startScan } = useNetworkScan();
+    const [isScanning, setIsScanning] = useState(false);
+    const { toast } = useToast();
 
     const handleScan = async () => {
-        await startScan(startIp, endIp);
-        setOpen(false);
+        try {
+            setIsScanning(true);
+            await api.startNetworkScan(startIp, endIp);
+            toast({
+                title: "Scan Started",
+                description: "Network scan has been initiated successfully.",
+            });
+            setOpen(false);
+        } catch (error) {
+            console.error('Network scan error:', error);
+            toast({
+                title: "Scan Failed",
+                description: error instanceof Error ? error.message : "Failed to start network scan",
+                variant: "destructive",
+            });
+        } finally {
+            setIsScanning(false);
+        }
     };
+
+    const validateIp = (ip: string): boolean => {
+        const pattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+        if (!pattern.test(ip)) return false;
+        return ip.split('.').every(num => parseInt(num) >= 0 && parseInt(num) <= 255);
+    };
+
+    const isValidRange = validateIp(startIp) && validateIp(endIp);
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -73,7 +99,10 @@ export const NetworkScanButton = () => {
                     <Button variant="outline" onClick={() => setOpen(false)}>
                         Cancel
                     </Button>
-                    <Button onClick={handleScan} disabled={isScanning}>
+                    <Button 
+                        onClick={handleScan} 
+                        disabled={isScanning || !isValidRange}
+                    >
                         {isScanning ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
