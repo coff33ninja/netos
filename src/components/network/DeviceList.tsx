@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
     Table,
@@ -10,7 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { api } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Power, PowerOff, Wifi } from 'lucide-react';
+import { wakeDevice } from '@/utils/wol';
 
 interface Device {
     id: string;
@@ -71,6 +73,57 @@ export function DeviceList() {
         }
     };
 
+    const handleStartDevice = async (device: Device) => {
+        try {
+            toast({
+                title: "Starting Device",
+                description: `Attempting to start ${device.name}...`,
+            });
+            // TODO: Implement actual start device functionality
+            console.log('Starting device:', device.name);
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: `Failed to start ${device.name}`,
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleShutdownDevice = async (device: Device) => {
+        try {
+            toast({
+                title: "Shutting Down",
+                description: `Attempting to shutdown ${device.name}...`,
+            });
+            // TODO: Implement actual shutdown functionality
+            console.log('Shutting down device:', device.name);
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: `Failed to shutdown ${device.name}`,
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleWakeDevice = async (device: Device) => {
+        try {
+            const result = await wakeDevice(device.mac, device.name);
+            toast({
+                title: result.success ? "Success" : "Error",
+                description: result.message,
+                variant: result.success ? "default" : "destructive",
+            });
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: `Failed to wake ${device.name}`,
+                variant: "destructive",
+            });
+        }
+    };
+
     React.useEffect(() => {
         fetchDevices();
     }, []);
@@ -109,6 +162,7 @@ export function DeviceList() {
                                 <TableHead>Manufacturer</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Last Seen</TableHead>
+                                <TableHead>Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -121,6 +175,34 @@ export function DeviceList() {
                                     <TableCell>{device.manufacturer}</TableCell>
                                     <TableCell>{device.status}</TableCell>
                                     <TableCell>{new Date(device.lastSeen).toLocaleString()}</TableCell>
+                                    <TableCell>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleStartDevice(device)}
+                                                disabled={device.status === 'online'}
+                                            >
+                                                <Power className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleShutdownDevice(device)}
+                                                disabled={device.status !== 'online'}
+                                            >
+                                                <PowerOff className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleWakeDevice(device)}
+                                                disabled={device.status === 'online' || !device.mac}
+                                            >
+                                                <Wifi className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
