@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Server, Activity, Settings, Network, Power, Monitor } from "lucide-react";
@@ -22,6 +23,25 @@ import { Node } from "@/types/network";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/components/ui/use-toast";
 import { api } from "@/services/api";
+
+// Utility functions for status and metric colors
+const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+        case 'online':
+            return 'bg-green-500 text-white';
+        case 'offline':
+            return 'bg-red-500 text-white';
+        default:
+            return 'bg-gray-500 text-white';
+    }
+};
+
+const getMetricColor = (value: number) => {
+    if (value >= 90) return 'text-red-500';
+    if (value >= 75) return 'text-orange-500';
+    if (value >= 60) return 'text-yellow-500';
+    return 'text-green-500';
+};
 
 const Nodes = () => {
     const [nodes, setNodes] = useState<Node[]>([
@@ -327,3 +347,4 @@ const Nodes = () => {
 };
 
 export default Nodes;
+
