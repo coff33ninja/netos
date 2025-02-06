@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Server, Activity, Settings, Network, Power, Monitor, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import {
     Dialog,
@@ -19,28 +19,12 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Node } from "@/types/network";
-import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/components/ui/use-toast";
 import { api } from "@/services/api";
-
-// Utility functions for status and metric colors
-const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-        case 'online':
-            return 'bg-green-500 text-white';
-        case 'offline':
-            return 'bg-red-500 text-white';
-        default:
-            return 'bg-gray-500 text-white';
-    }
-};
-
-const getMetricColor = (value: number) => {
-    if (value >= 90) return 'text-red-500';
-    if (value >= 75) return 'text-orange-500';
-    if (value >= 60) return 'text-yellow-500';
-    return 'text-green-500';
-};
+import { NodeCard } from "@/components/nodes/NodeCard";
+import { ConsoleDialog } from "@/components/nodes/ConsoleDialog";
+import { PowerDialog } from "@/components/nodes/PowerDialog";
+import { ConfigDialog } from "@/components/nodes/ConfigDialog";
 
 const Nodes = () => {
     const [nodes, setNodes] = useState<Node[]>([
@@ -226,69 +210,12 @@ const Nodes = () => {
         }
     };
 
-    const renderConfigDialog = () => (
-        <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
-            <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                    <DialogTitle>Node Configuration</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="space-y-2">
-                        <Label>CPU Threshold (%)</Label>
-                        <Slider
-                            value={[thresholds.cpu]}
-                            onValueChange={(value) => setThresholds(prev => ({ ...prev, cpu: value[0] }))}
-                            max={100}
-                            step={1}
-                        />
-                        <span className="text-sm text-muted-foreground">{thresholds.cpu}%</span>
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Memory Threshold (%)</Label>
-                        <Slider
-                            value={[thresholds.memory]}
-                            onValueChange={(value) => setThresholds(prev => ({ ...prev, memory: value[0] }))}
-                            max={100}
-                            step={1}
-                        />
-                        <span className="text-sm text-muted-foreground">{thresholds.memory}%</span>
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Disk Threshold (%)</Label>
-                        <Slider
-                            value={[thresholds.disk]}
-                            onValueChange={(value) => setThresholds(prev => ({ ...prev, disk: value[0] }))}
-                            max={100}
-                            step={1}
-                        />
-                        <span className="text-sm text-muted-foreground">{thresholds.disk}%</span>
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Network Threshold (%)</Label>
-                        <Slider
-                            value={[thresholds.network]}
-                            onValueChange={(value) => setThresholds(prev => ({ ...prev, network: value[0] }))}
-                            max={100}
-                            step={1}
-                        />
-                        <span className="text-sm text-muted-foreground">{thresholds.network}%</span>
-                    </div>
-                </div>
-                <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setIsConfigOpen(false)}>
-                        Cancel
-                    </Button>
-                    <Button onClick={() => selectedNode && handleConfigSave(selectedNode.id)}>
-                        Save Changes
-                    </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
-    );
+    const handleConsoleCommand = (command: string) => {
+        setConsoleOutput([...consoleOutput, `> ${command}`, 'Command not found']);
+    };
 
-    const handleConfigureClick = (node: Node) => {
-        setSelectedNode(node);
-        setIsConfigOpen(true);
+    const handleThresholdChange = (type: keyof typeof thresholds, value: number) => {
+        setThresholds(prev => ({ ...prev, [type]: value }));
     };
 
     return (
@@ -341,182 +268,47 @@ const Nodes = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {nodes.map((node) => (
-                    <Card key={node.id} className="relative">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                {node.name}
-                            </CardTitle>
-                            <Server className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex flex-col space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-muted-foreground">Status</span>
-                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(node.status)}`}>
-                                        {node.status}
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-muted-foreground">Type</span>
-                                    <span className="text-sm">{node.type}</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-muted-foreground">IP Address</span>
-                                    <span className="text-sm">{node.ipAddress}</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-muted-foreground">Location</span>
-                                    <span className="text-sm">{node.location}</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-muted-foreground">Version</span>
-                                    <span className="text-sm">{node.version}</span>
-                                </div>
-
-                                <div className="pt-4">
-                                    <div className="text-sm font-medium mb-2">System Metrics</div>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs text-muted-foreground">CPU</span>
-                                            <span className={`text-xs font-medium ${getMetricColor(node.metrics?.cpu || 0)}`}>
-                                                {node.metrics?.cpu}%
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs text-muted-foreground">Memory</span>
-                                            <span className={`text-xs font-medium ${getMetricColor(node.metrics?.memory || 0)}`}>
-                                                {node.metrics?.memory}%
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs text-muted-foreground">Disk</span>
-                                            <span className={`text-xs font-medium ${getMetricColor(node.metrics?.disk || 0)}`}>
-                                                {node.metrics?.disk}%
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs text-muted-foreground">Network</span>
-                                            <span className={`text-xs font-medium ${getMetricColor(node.metrics?.network || 0)}`}>
-                                                {node.metrics?.network}%
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex space-x-2 mt-4">
-                                    <Button 
-                                        variant="outline" 
-                                        size="sm" 
-                                        className="flex-1"
-                                        onClick={() => handleTestConnection(node.id)}
-                                    >
-                                        <Activity className="h-4 w-4 mr-2" />
-                                        Test
-                                    </Button>
-                                    <Button 
-                                        variant="outline" 
-                                        size="sm" 
-                                        className="flex-1"
-                                        onClick={() => handleNetworkInfo(node.id)}
-                                    >
-                                        <Network className="h-4 w-4 mr-2" />
-                                        Network
-                                    </Button>
-                                </div>
-                                
-                                <div className="flex space-x-2">
-                                    <Button 
-                                        variant="outline" 
-                                        size="sm" 
-                                        className="flex-1"
-                                        onClick={() => setIsPowerDialogOpen(true)}
-                                    >
-                                        <Power className="h-4 w-4 mr-2" />
-                                        Power
-                                    </Button>
-                                    <Button 
-                                        variant="outline" 
-                                        size="sm" 
-                                        className="flex-1"
-                                        onClick={() => handleConsole(node.id)}
-                                    >
-                                        <Monitor className="h-4 w-4 mr-2" />
-                                        Console
-                                    </Button>
-                                </div>
-
-                                <Button 
-                                    variant="destructive" 
-                                    size="sm"
-                                    className="mt-2"
-                                    onClick={() => handleRemoveNode(node.id)}
-                                >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Remove Node
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <NodeCard
+                        key={node.id}
+                        node={node}
+                        onTestConnection={handleTestConnection}
+                        onNetworkInfo={handleNetworkInfo}
+                        onPowerAction={() => {
+                            setSelectedNode(node);
+                            setIsPowerDialogOpen(true);
+                        }}
+                        onConsole={handleConsole}
+                        onRemove={handleRemoveNode}
+                    />
                 ))}
             </div>
 
-            {/* Power Actions Dialog */}
-            <Dialog open={isPowerDialogOpen} onOpenChange={setIsPowerDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Power Actions</DialogTitle>
-                    </DialogHeader>
-                    <div className="flex flex-col space-y-2">
-                        <Button onClick={() => {
-                            handlePowerAction(selectedNode?.id || '', 'start');
-                            setIsPowerDialogOpen(false);
-                        }}>
-                            Start
-                        </Button>
-                        <Button onClick={() => {
-                            handlePowerAction(selectedNode?.id || '', 'stop');
-                            setIsPowerDialogOpen(false);
-                        }}>
-                            Stop
-                        </Button>
-                        <Button onClick={() => {
-                            handlePowerAction(selectedNode?.id || '', 'restart');
-                            setIsPowerDialogOpen(false);
-                        }}>
-                            Restart
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <PowerDialog
+                isOpen={isPowerDialogOpen}
+                onOpenChange={setIsPowerDialogOpen}
+                onPowerAction={(action) => {
+                    if (selectedNode) {
+                        handlePowerAction(selectedNode.id, action);
+                        setIsPowerDialogOpen(false);
+                    }
+                }}
+            />
 
-            {/* Console Dialog */}
-            <Dialog open={isConsoleOpen} onOpenChange={setIsConsoleOpen}>
-                <DialogContent className="sm:max-w-[600px]">
-                    <DialogHeader>
-                        <DialogTitle>Console - {selectedNode?.name}</DialogTitle>
-                    </DialogHeader>
-                    <div className="bg-black text-green-500 p-4 rounded-md font-mono text-sm h-[300px] overflow-y-auto">
-                        {consoleOutput.map((line, index) => (
-                            <div key={index}>{line}</div>
-                        ))}
-                    </div>
-                    <div className="flex gap-2">
-                        <Input 
-                            placeholder="Enter command..."
-                            className="font-mono"
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    setConsoleOutput([...consoleOutput, `> ${e.currentTarget.value}`, 'Command not found']);
-                                    e.currentTarget.value = '';
-                                }
-                            }}
-                        />
-                        <Button variant="secondary">Send</Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <ConsoleDialog
+                isOpen={isConsoleOpen}
+                onOpenChange={setIsConsoleOpen}
+                selectedNode={selectedNode}
+                consoleOutput={consoleOutput}
+                onCommand={handleConsoleCommand}
+            />
 
-            {renderConfigDialog()}
+            <ConfigDialog
+                isOpen={isConfigOpen}
+                onOpenChange={setIsConfigOpen}
+                thresholds={thresholds}
+                onThresholdChange={handleThresholdChange}
+                onSave={() => selectedNode && handleConfigSave(selectedNode.id)}
+            />
         </div>
     );
 };
