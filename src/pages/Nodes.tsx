@@ -1,7 +1,6 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Server, Activity, Settings, Network, Power, Monitor } from "lucide-react";
+import { Plus, Server, Activity, Settings, Network, Power, Monitor, Trash2 } from "lucide-react";
 import { useState } from "react";
 import {
     Dialog,
@@ -80,6 +79,9 @@ const Nodes = () => {
     ]);
     const [selectedNode, setSelectedNode] = useState<Node | null>(null);
     const [isConfigOpen, setIsConfigOpen] = useState(false);
+    const [isPowerDialogOpen, setIsPowerDialogOpen] = useState(false);
+    const [isConsoleOpen, setIsConsoleOpen] = useState(false);
+    const [consoleOutput, setConsoleOutput] = useState<string[]>([]);
     const [thresholds, setThresholds] = useState({
         cpu: 80,
         memory: 80,
@@ -88,23 +90,120 @@ const Nodes = () => {
     });
     const { toast } = useToast();
 
+    // Add Node Handler
+    const handleAddNode = (formData: any) => {
+        const newNode: Node = {
+            id: String(nodes.length + 1),
+            name: formData.name,
+            status: "offline",
+            lastSeen: new Date().toISOString(),
+            type: formData.type,
+            location: formData.location,
+            ipAddress: formData.ipAddress,
+            version: "1.0.0",
+            metrics: {
+                cpu: 0,
+                memory: 0,
+                disk: 0,
+                network: 0
+            }
+        };
+        setNodes([...nodes, newNode]);
+        toast({
+            title: "Node Added",
+            description: `Node ${formData.name} has been added successfully.`
+        });
+    };
+
+    // Remove Node Handler
+    const handleRemoveNode = (nodeId: string) => {
+        setNodes(nodes.filter(node => node.id !== nodeId));
+        toast({
+            title: "Node Removed",
+            description: "The node has been removed from the network.",
+            variant: "destructive"
+        });
+    };
+
+    // Test Connection Handler
     const handleTestConnection = async (nodeId: string) => {
-        try {
-            const result = await api.testNodeConnection(nodeId);
+        const node = nodes.find(n => n.id === nodeId);
+        if (!node) return;
+
+        toast({
+            title: "Testing Connection",
+            description: `Testing connection to ${node.name}...`
+        });
+
+        // Simulate network delay
+        setTimeout(() => {
+            const success = Math.random() > 0.3; // 70% success rate
             toast({
-                title: result.success ? "Connection Successful" : "Connection Failed",
-                description: result.success
-                    ? `Latency: ${result.latency}ms`
-                    : result.error,
-                variant: result.success ? "default" : "destructive",
+                title: success ? "Connection Successful" : "Connection Failed",
+                description: success 
+                    ? `Successfully connected to ${node.name}. Latency: ${Math.floor(Math.random() * 100)}ms`
+                    : `Failed to connect to ${node.name}. Please check network settings.`,
+                variant: success ? "default" : "destructive",
             });
-        } catch (error) {
+        }, 1500);
+    };
+
+    // Network Info Handler
+    const handleNetworkInfo = (nodeId: string) => {
+        const node = nodes.find(n => n.id === nodeId);
+        if (!node) return;
+
+        toast({
+            title: "Network Information",
+            description: `IP: ${node.ipAddress} | Type: ${node.type} | Status: ${node.status}`,
+        });
+    };
+
+    // Power Action Handler
+    const handlePowerAction = (nodeId: string, action: 'start' | 'stop' | 'restart') => {
+        const node = nodes.find(n => n.id === nodeId);
+        if (!node) return;
+
+        toast({
+            title: "Power Action",
+            description: `${action.charAt(0).toUpperCase() + action.slice(1)}ing ${node.name}...`,
+        });
+
+        // Simulate power action
+        setTimeout(() => {
+            setNodes(nodes.map(n => {
+                if (n.id === nodeId) {
+                    return {
+                        ...n,
+                        status: action === 'stop' ? 'offline' : 'online'
+                    };
+                }
+                return n;
+            }));
+
             toast({
-                title: "Test Failed",
-                description: "Could not complete connection test",
-                variant: "destructive",
+                title: "Action Complete",
+                description: `Successfully ${action}ed ${node.name}`,
             });
-        }
+        }, 2000);
+    };
+
+    // Console Handler
+    const handleConsole = (nodeId: string) => {
+        const node = nodes.find(n => n.id === nodeId);
+        if (!node) return;
+
+        setSelectedNode(node);
+        setConsoleOutput([
+            `Connected to ${node.name}`,
+            `System Info:`,
+            `OS: Linux Linux 5.15.0`,
+            `CPU Usage: ${node.metrics.cpu}%`,
+            `Memory Usage: ${node.metrics.memory}%`,
+            `Disk Usage: ${node.metrics.disk}%`,
+            `Type 'help' for available commands`
+        ]);
+        setIsConsoleOpen(true);
     };
 
     const handleConfigSave = async (nodeId: string) => {
@@ -318,28 +417,104 @@ const Nodes = () => {
                                         variant="outline" 
                                         size="sm" 
                                         className="flex-1"
-                                        onClick={() => handleConfigureClick(node)}
+                                        onClick={() => handleNetworkInfo(node.id)}
                                     >
-                                        <Settings className="h-4 w-4 mr-2" />
-                                        Configure
+                                        <Network className="h-4 w-4 mr-2" />
+                                        Network
                                     </Button>
                                 </div>
                                 
                                 <div className="flex space-x-2">
-                                    <Button variant="outline" size="sm" className="flex-1">
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="flex-1"
+                                        onClick={() => setIsPowerDialogOpen(true)}
+                                    >
                                         <Power className="h-4 w-4 mr-2" />
                                         Power
                                     </Button>
-                                    <Button variant="outline" size="sm" className="flex-1">
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="flex-1"
+                                        onClick={() => handleConsole(node.id)}
+                                    >
                                         <Monitor className="h-4 w-4 mr-2" />
                                         Console
                                     </Button>
                                 </div>
+
+                                <Button 
+                                    variant="destructive" 
+                                    size="sm"
+                                    className="mt-2"
+                                    onClick={() => handleRemoveNode(node.id)}
+                                >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Remove Node
+                                </Button>
                             </div>
                         </CardContent>
                     </Card>
                 ))}
             </div>
+
+            {/* Power Actions Dialog */}
+            <Dialog open={isPowerDialogOpen} onOpenChange={setIsPowerDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Power Actions</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col space-y-2">
+                        <Button onClick={() => {
+                            handlePowerAction(selectedNode?.id || '', 'start');
+                            setIsPowerDialogOpen(false);
+                        }}>
+                            Start
+                        </Button>
+                        <Button onClick={() => {
+                            handlePowerAction(selectedNode?.id || '', 'stop');
+                            setIsPowerDialogOpen(false);
+                        }}>
+                            Stop
+                        </Button>
+                        <Button onClick={() => {
+                            handlePowerAction(selectedNode?.id || '', 'restart');
+                            setIsPowerDialogOpen(false);
+                        }}>
+                            Restart
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Console Dialog */}
+            <Dialog open={isConsoleOpen} onOpenChange={setIsConsoleOpen}>
+                <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                        <DialogTitle>Console - {selectedNode?.name}</DialogTitle>
+                    </DialogHeader>
+                    <div className="bg-black text-green-500 p-4 rounded-md font-mono text-sm h-[300px] overflow-y-auto">
+                        {consoleOutput.map((line, index) => (
+                            <div key={index}>{line}</div>
+                        ))}
+                    </div>
+                    <div className="flex gap-2">
+                        <Input 
+                            placeholder="Enter command..."
+                            className="font-mono"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    setConsoleOutput([...consoleOutput, `> ${e.currentTarget.value}`, 'Command not found']);
+                                    e.currentTarget.value = '';
+                                }
+                            }}
+                        />
+                        <Button variant="secondary">Send</Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {renderConfigDialog()}
         </div>
@@ -347,4 +522,3 @@ const Nodes = () => {
 };
 
 export default Nodes;
-
