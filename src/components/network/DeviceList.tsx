@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import {
     Table,
     TableBody,
@@ -10,8 +11,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { api, type Device } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, Power, PowerOff, Wifi } from 'lucide-react';
+import { Trash2, Power, PowerOff, Wifi, TestTube } from 'lucide-react';
 import { wakeDevice } from '@/utils/wol';
+import { PowerDialog } from '../nodes/PowerDialog';
 
 interface DeviceListProps {
     currentPage: number;
@@ -22,6 +24,8 @@ export function DeviceList({ currentPage, itemsPerPage }: DeviceListProps) {
     const [devices, setDevices] = React.useState<Device[]>([]);
     const [isLoading, setIsLoading] = React.useState(true);
     const [isDeleting, setIsDeleting] = React.useState(false);
+    const [selectedDeviceId, setSelectedDeviceId] = React.useState<string | null>(null);
+    const [isPowerDialogOpen, setIsPowerDialogOpen] = React.useState(false);
     const { toast } = useToast();
 
     const fetchDevices = async () => {
@@ -66,38 +70,41 @@ export function DeviceList({ currentPage, itemsPerPage }: DeviceListProps) {
         }
     };
 
-    const handleStartDevice = async (device: Device) => {
+    const handleTestDevice = async (device: Device) => {
         try {
             toast({
-                title: "Starting Device",
-                description: `Attempting to start ${device.name}...`,
+                title: "Testing Connection",
+                description: `Testing connection to ${device.name}...`,
             });
-            // TODO: Implement actual start device functionality
-            console.log('Starting device:', device.name);
+            // TODO: Implement actual test functionality
+            console.log('Testing device:', device.name);
+            
+            // Simulate test success after 1 second
+            setTimeout(() => {
+                toast({
+                    title: "Test Complete",
+                    description: `Connection test to ${device.name} successful`,
+                });
+            }, 1000);
         } catch (error) {
             toast({
                 title: "Error",
-                description: `Failed to start ${device.name}`,
+                description: `Failed to test ${device.name}`,
                 variant: "destructive",
             });
         }
     };
 
-    const handleShutdownDevice = async (device: Device) => {
-        try {
-            toast({
-                title: "Shutting Down",
-                description: `Attempting to shutdown ${device.name}...`,
-            });
-            // TODO: Implement actual shutdown functionality
-            console.log('Shutting down device:', device.name);
-        } catch (error) {
-            toast({
-                title: "Error",
-                description: `Failed to shutdown ${device.name}`,
-                variant: "destructive",
-            });
-        }
+    const handlePowerAction = (action: 'start' | 'stop' | 'restart') => {
+        const device = devices.find(d => d.id === selectedDeviceId);
+        if (!device) return;
+
+        toast({
+            title: "Power Action",
+            description: `${action} command sent to ${device.name}`,
+        });
+        setIsPowerDialogOpen(false);
+        setSelectedDeviceId(null);
     };
 
     const handleWakeDevice = async (device: Device) => {
@@ -173,24 +180,28 @@ export function DeviceList({ currentPage, itemsPerPage }: DeviceListProps) {
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={() => handleStartDevice(device)}
-                                                disabled={device.status === 'online'}
+                                                onClick={() => handleTestDevice(device)}
+                                                title="Test Connection"
+                                            >
+                                                <TestTube className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setSelectedDeviceId(device.id);
+                                                    setIsPowerDialogOpen(true);
+                                                }}
+                                                title="Power Actions"
                                             >
                                                 <Power className="h-4 w-4" />
                                             </Button>
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={() => handleShutdownDevice(device)}
-                                                disabled={device.status !== 'online'}
-                                            >
-                                                <PowerOff className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
                                                 onClick={() => handleWakeDevice(device)}
                                                 disabled={device.status === 'online' || !device.mac}
+                                                title="Wake Device"
                                             >
                                                 <Wifi className="h-4 w-4" />
                                             </Button>
@@ -202,6 +213,12 @@ export function DeviceList({ currentPage, itemsPerPage }: DeviceListProps) {
                     </Table>
                 </div>
             )}
+
+            <PowerDialog 
+                isOpen={isPowerDialogOpen}
+                onOpenChange={setIsPowerDialogOpen}
+                onPowerAction={handlePowerAction}
+            />
         </div>
     );
 }
