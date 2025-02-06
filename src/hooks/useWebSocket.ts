@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Device, NetworkScan } from '../services/api';
+import type { Device, NetworkScan } from '@/types/api';
 
 interface WebSocketMessage {
     type: 'DEVICE_LIST' | 'DEVICE_UPDATE' | 'SCAN_UPDATE';

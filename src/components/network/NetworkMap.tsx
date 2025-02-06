@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { ForceGraph2D } from 'react-force-graph';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { api, Device } from '@/services/api';
+import { api } from '@/services/api';
+import type { Device } from '@/types/api';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
@@ -112,13 +113,15 @@ export const NetworkMap = () => {
                                 const fontSize = 12/globalScale;
                                 ctx.font = `${fontSize}px Sans-Serif`;
                                 const textWidth = ctx.measureText(label).width;
-                                const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2);
+                                const bckgDimensions = [textWidth, fontSize];
+                                const paddedDimensions = bckgDimensions.map(n => n + fontSize * 0.2);
 
                                 ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
                                 ctx.fillRect(
-                                    node.x - bckgDimensions[0] / 2,
-                                    node.y - bckgDimensions[1] / 2,
-                                    ...bckgDimensions
+                                    node.x - paddedDimensions[0] / 2,
+                                    node.y - paddedDimensions[1] / 2,
+                                    paddedDimensions[0],
+                                    paddedDimensions[1]
                                 );
 
                                 ctx.textAlign = 'center';

@@ -103,6 +103,9 @@ export const DeviceManagementButton = ({ onDeviceAdded }: Props) => {
                 mac: form.mac.trim() || null,
                 type: form.type,
                 status: 'online' as const,
+                manufacturer: 'Unknown', // Add required field
+                lastSeen: new Date().toISOString(), // Add required field
+                firstSeen: new Date().toISOString(), // Add required field
             };
 
             console.log('Submitting device data:', deviceData);

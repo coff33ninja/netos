@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
     Table,
@@ -10,9 +9,15 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { api } from '@/services/api';
+import type { Device } from '@/types/api';
 import { useToast } from '@/hooks/use-toast';
 import { Trash2, Power, PowerOff, Wifi } from 'lucide-react';
 import { wakeDevice } from '@/utils/wol';
+
+interface DeviceListProps {
+    currentPage: number;
+    itemsPerPage: number;
+}
 
 interface Device {
     id: string;
@@ -25,7 +30,7 @@ interface Device {
     lastSeen: string;
 }
 
-export function DeviceList() {
+export function DeviceList({ currentPage, itemsPerPage }: DeviceListProps) {
     const [devices, setDevices] = React.useState<Device[]>([]);
     const [isLoading, setIsLoading] = React.useState(true);
     const [isDeleting, setIsDeleting] = React.useState(false);

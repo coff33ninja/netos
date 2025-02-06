@@ -1,21 +1,7 @@
 import { useState } from 'react';
 import { api } from '@/services/api';
+import type { NetworkScan } from '@/types/api';
 import { useToast } from '@/hooks/use-toast';
-
-interface NetworkScan {
-    id: number;
-    start_ip: string;
-    end_ip: string;
-    status: 'pending' | 'completed' | 'failed';
-    devices_found?: Array<{
-        ip: string;
-        mac: string | null;
-        type: string;
-        manufacturer?: string;
-        resolvedName?: string;
-    }>;
-    error?: string;
-}
 
 export function useNetworkScan() {
     const [isScanning, setIsScanning] = useState(false);
@@ -27,18 +13,25 @@ export function useNetworkScan() {
             setIsScanning(true);
             console.log('Starting network scan:', { startIp, endIp });
             
-            const scan = await api.startNetworkScan({
+            const { id } = await api.startNetworkScan({
                 start_ip: startIp,  // Changed to match backend's expected format
                 end_ip: endIp       // Changed to match backend's expected format
             });
-            console.log('Scan started:', scan);
-            setCurrentScan(scan);
+            console.log('Scan started:', { id });
+            
+            // Create initial scan state
+            setCurrentScan({
+                id,
+                start_ip: startIp,
+                end_ip: endIp,
+                status: 'pending'
+            });
 
             // Start polling for status
             const checkStatus = async () => {
                 try {
-                    console.log('Checking scan status for ID:', scan.id);
-                    const updatedScan = await api.getScanStatus(scan.id);
+                    console.log('Checking scan status for ID:', id);
+                    const updatedScan = await api.getScanStatus(id);
                     console.log('Updated scan status:', updatedScan);
                     setCurrentScan(updatedScan);
 

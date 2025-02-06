@@ -1,5 +1,6 @@
+
 import { API_ENDPOINTS, handleApiResponse } from '@/config/api';
-import type { Device } from '@/types/api';
+import type { Device, NetworkScan } from '@/types/api';
 
 class ApiService {
     async getAllDevices(): Promise<Device[]> {
@@ -73,3 +74,4 @@ class ApiService {
 }
 
 export const api = new ApiService();
+export type { Device, NetworkScan };
