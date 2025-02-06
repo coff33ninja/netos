@@ -1,4 +1,3 @@
-
 import {
     Dialog,
     DialogContent,
@@ -8,17 +7,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { NodeThresholds } from "@/types/network";
 
 interface ConfigDialogProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
-    thresholds: {
-        cpu: number;
-        memory: number;
-        disk: number;
-        network: number;
-    };
-    onThresholdChange: (type: keyof typeof thresholds, value: number) => void;
+    thresholds: NodeThresholds;
+    onThresholdChange: (type: keyof NodeThresholds, value: number) => void;
     onSave: () => void;
 }
 

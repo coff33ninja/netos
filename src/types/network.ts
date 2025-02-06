@@ -1,4 +1,3 @@
-
 export interface DeviceInfo {
   id?: number;
   name: string;
@@ -49,6 +48,20 @@ export interface Node {
   };
 }
 
+export interface NodeMetrics {
+  cpu: number;
+  memory: number;
+  disk: number;
+  network: number;
+}
+
+export interface NodeThresholds {
+  cpu: number;
+  memory: number;
+  disk: number;
+  network: number;
+}
+
 export interface AlertInfo {
   id: number;
   type: "error" | "warning" | "info";
@@ -74,4 +87,3 @@ export interface SystemStatus {
   lastScanTimestamp?: string;
   alerts: AlertInfo[];
 }
-
