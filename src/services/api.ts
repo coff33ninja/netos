@@ -1,4 +1,3 @@
-
 import { API_ENDPOINTS, handleApiResponse } from '@/config/api';
 
 export interface Device {
@@ -27,6 +26,26 @@ export interface NetworkScan {
         manufacturer?: string;
         resolvedName?: string;
     }>;
+    error?: string;
+}
+
+export interface NodeConfig {
+    id: string;
+    name: string;
+    enabled: boolean;
+    alertThresholds: {
+        cpu: number;
+        memory: number;
+        disk: number;
+        network: number;
+    };
+    monitoringInterval: number;
+}
+
+export interface NodeTestResult {
+    success: boolean;
+    latency: number;
+    timestamp: string;
     error?: string;
 }
 
@@ -98,6 +117,28 @@ class ApiService {
     async getLatestScans(): Promise<any[]> {
         const response = await fetch(API_ENDPOINTS.getLatestScans);
         return handleApiResponse(response);
+    }
+
+    // Node-specific methods
+    async getNodeConfig(nodeId: string): Promise<NodeConfig> {
+        const response = await fetch(API_ENDPOINTS.status + `/nodes/${nodeId}/config`);
+        return handleApiResponse<NodeConfig>(response);
+    }
+
+    async updateNodeConfig(nodeId: string, config: Partial<NodeConfig>): Promise<NodeConfig> {
+        const response = await fetch(API_ENDPOINTS.status + `/nodes/${nodeId}/config`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(config),
+        });
+        return handleApiResponse<NodeConfig>(response);
+    }
+
+    async testNodeConnection(nodeId: string): Promise<NodeTestResult> {
+        const response = await fetch(API_ENDPOINTS.status + `/nodes/${nodeId}/test`, {
+            method: 'POST',
+        });
+        return handleApiResponse<NodeTestResult>(response);
     }
 }
 
