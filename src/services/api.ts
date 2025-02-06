@@ -1,6 +1,34 @@
 
 import { API_ENDPOINTS, handleApiResponse } from '@/config/api';
-import type { Device, NetworkScan } from '@/types/api';
+
+export interface Device {
+    id: string;
+    ip: string;
+    mac: string;
+    name: string;
+    type: string;
+    manufacturer: string;
+    status: 'online' | 'offline' | 'unknown';
+    lastSeen: string;
+    firstSeen: string;
+    ports?: number[];
+}
+
+export interface NetworkScan {
+    id: number;
+    start_ip: string;
+    end_ip: string;
+    status: 'pending' | 'completed' | 'failed';
+    timestamp?: string;
+    devices_found?: Array<{
+        ip: string;
+        mac: string | null;
+        type: string;
+        manufacturer?: string;
+        resolvedName?: string;
+    }>;
+    error?: string;
+}
 
 class ApiService {
     async getAllDevices(): Promise<Device[]> {
@@ -74,4 +102,3 @@ class ApiService {
 }
 
 export const api = new ApiService();
-export type { Device, NetworkScan };

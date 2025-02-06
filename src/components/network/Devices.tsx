@@ -167,8 +167,8 @@ export const Devices = () => {
                                                 {device.mac || 'N/A'}
                                             </TableCell>
                                             <TableCell>
-                                                {device.last_seen
-                                                    ? new Date(device.last_seen).toLocaleString()
+                                                {device.lastSeen
+                                                    ? new Date(device.lastSeen).toLocaleString()
                                                     : 'N/A'}
                                             </TableCell>
                                             <TableCell>

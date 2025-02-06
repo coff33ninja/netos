@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import {
     Dialog,
@@ -10,7 +11,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { api, Device } from '../../services/api';
+import { api, Device } from '@/services/api';
 import { useToast } from '../ui/use-toast';
 
 interface DeviceDetailsProps {
@@ -83,8 +84,8 @@ export function DeviceDetails({ device, onUpdate }: DeviceDetailsProps) {
                             <div className="space-y-2">
                                 <Label>Last Seen</Label>
                                 <div className="text-sm">
-                                    {device.last_seen
-                                        ? new Date(device.last_seen).toLocaleString()
+                                    {device.lastSeen
+                                        ? new Date(device.lastSeen).toLocaleString()
                                         : 'Never'}
                                 </div>
                             </div>

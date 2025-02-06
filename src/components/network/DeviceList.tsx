@@ -8,8 +8,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { api } from '@/services/api';
-import type { Device } from '@/types/api';
+import { api, type Device } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import { Trash2, Power, PowerOff, Wifi } from 'lucide-react';
 import { wakeDevice } from '@/utils/wol';
@@ -17,17 +16,6 @@ import { wakeDevice } from '@/utils/wol';
 interface DeviceListProps {
     currentPage: number;
     itemsPerPage: number;
-}
-
-interface Device {
-    id: string;
-    ip: string;
-    mac: string;
-    name: string;
-    type: string;
-    manufacturer: string;
-    status: 'online' | 'offline' | 'unknown';
-    lastSeen: string;
 }
 
 export function DeviceList({ currentPage, itemsPerPage }: DeviceListProps) {
