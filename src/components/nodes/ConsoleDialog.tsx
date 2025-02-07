@@ -1,9 +1,9 @@
-
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,9 +26,12 @@ export const ConsoleDialog = ({
 }: ConsoleDialogProps) => {
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Console - {selectedNode?.name}</DialogTitle>
+                    <DialogDescription>
+                        Access the node's command-line interface
+                    </DialogDescription>
                 </DialogHeader>
                 <div className="bg-black text-green-500 p-4 rounded-md font-mono text-sm h-[300px] overflow-y-auto">
                     {consoleOutput.map((line, index) => (

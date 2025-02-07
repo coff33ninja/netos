@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -6,14 +5,26 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Power, RefreshCw, StopCircle } from "lucide-react";
+import { Save, Power, RefreshCw, StopCircle, ExternalLink } from "lucide-react";
 import { controlBackend } from "@/utils/statusMonitor";
 import { StatusIndicator } from "@/components/network/StatusIndicator";
+import { useState, useEffect } from "react";
 
 const Settings = () => {
   const { toast } = useToast();
+  const [mapsApiKey, setMapsApiKey] = useState('');
+
+  useEffect(() => {
+    const savedApiKey = localStorage.getItem('VITE_GOOGLE_MAPS_API_KEY');
+    if (savedApiKey) {
+      setMapsApiKey(savedApiKey);
+    }
+  }, []);
 
   const handleSave = () => {
+    if (mapsApiKey) {
+      localStorage.setItem('VITE_GOOGLE_MAPS_API_KEY', mapsApiKey);
+    }
     toast({
       title: "Settings Saved",
       description: "Your changes have been successfully saved.",
@@ -30,6 +41,7 @@ const Settings = () => {
       <StatusIndicator />
       
       <div className="grid gap-6">
+        {/* Backend Control Card */}
         <Card>
           <CardHeader>
             <CardTitle>Backend Control</CardTitle>
@@ -64,6 +76,45 @@ const Settings = () => {
           </CardContent>
         </Card>
 
+        {/* Google Maps API Configuration */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Google Maps Configuration</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="maps-api-key">Google Maps API Key</Label>
+                <Input
+                  id="maps-api-key"
+                  type="password"
+                  value={mapsApiKey}
+                  onChange={(e) => setMapsApiKey(e.target.value)}
+                  placeholder="Enter your Google Maps API Key"
+                  className="mt-1"
+                />
+              </div>
+              <div className="text-sm text-muted-foreground space-y-2">
+                <p>To obtain a Google Maps API key:</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Go to the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center">
+                    Google Cloud Console
+                    <ExternalLink className="h-3 w-3 ml-1" />
+                  </a></li>
+                  <li>Create a new project or select an existing one</li>
+                  <li>Enable the Maps JavaScript API for your project</li>
+                  <li>Go to Credentials and create an API key</li>
+                  <li>Restrict the API key to your domain for security</li>
+                </ol>
+                <p className="mt-2 text-yellow-600 dark:text-yellow-400">
+                  Note: Keep your API key secure and never share it publicly.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Network Scanning Card */}
         <Card>
           <CardHeader>
             <CardTitle>Network Scanning</CardTitle>
@@ -92,6 +143,7 @@ const Settings = () => {
           </CardContent>
         </Card>
 
+        {/* Notifications Card */}
         <Card>
           <CardHeader>
             <CardTitle>Notifications</CardTitle>
@@ -112,6 +164,7 @@ const Settings = () => {
           </CardContent>
         </Card>
 
+        {/* Data Management Card */}
         <Card>
           <CardHeader>
             <CardTitle>Data Management</CardTitle>

@@ -119,4 +119,81 @@ router.put('/nodes/:id/config', passport.authenticate('jwt', { session: false })
     }
 });
 
+// Start a network scan on a specific node
+router.post('/nodes/:id/scan', passport.authenticate('jwt', { session: false }), async (req, res) => {
+    try {
+        const node = await dbOperations.getDeviceById(req.params.id);
+        if (!node) {
+            return res.status(404).json({ error: 'Node not found' });
+        }
+
+        // Initiate scan on the node
+        const scanId = await dbOperations.createNetworkScan({
+            nodeId: req.params.id,
+            status: 'pending',
+            startTime: new Date().toISOString()
+        });
+
+        // In a real implementation, you would send a command to the actual node
+        // to start scanning its local network
+
+        res.json({
+            scanId,
+            status: 'pending',
+            message: 'Network scan initiated on node'
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get scan results from a node
+router.get('/nodes/:id/scan/:scanId', passport.authenticate('jwt', { session: false }), async (req, res) => {
+    try {
+        const scan = await dbOperations.getNetworkScan(req.params.scanId);
+        if (!scan) {
+            return res.status(404).json({ error: 'Scan not found' });
+        }
+
+        res.json(scan);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Submit scan results from a node
+router.post('/nodes/:id/scan/:scanId/results', passport.authenticate('jwt', { session: false }), async (req, res) => {
+    try {
+        const { devices } = req.body;
+        
+        // Update scan status and save results
+        await dbOperations.updateNetworkScan(req.params.scanId, {
+            status: 'completed',
+            results: devices,
+            completedAt: new Date().toISOString()
+        });
+
+        // Update devices in the main database
+        for (const device of devices) {
+            const existingDevice = await dbOperations.getDeviceByIp(device.ip);
+            if (existingDevice) {
+                await dbOperations.updateDevice(existingDevice.id, {
+                    ...device,
+                    lastSeen: new Date().toISOString()
+                });
+            } else {
+                await dbOperations.insertDevice({
+                    ...device,
+                    nodeId: req.params.id,
+                    lastSeen: new Date().toISOString()
+                });
+            }
+        }
+
+        res.json({ message: 'Scan results processed successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 export default router;

@@ -1,8 +1,10 @@
+
 import { Routes, Route } from 'react-router-dom';
 import NavigationMenu from './components/navigation/NavigationMenu';
 import Index from './pages/Index';
 import Devices from './pages/Devices';
 import Nodes from './pages/Nodes';
+import NetworkTopology from './pages/NetworkTopology';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import { Toaster } from './components/ui/toaster';
@@ -18,6 +20,7 @@ function App() {
                         <Route path="/" element={<Index />} />
                         <Route path="/devices" element={<Devices />} />
                         <Route path="/nodes" element={<Nodes />} />
+                        <Route path="/network-topology" element={<NetworkTopology />} />
                         <Route path="/settings" element={<Settings />} />
                         <Route path="*" element={<NotFound />} />
                     </Routes>

@@ -1,89 +1,80 @@
-export interface DeviceInfo {
-  id?: number;
-  name: string;
-  ip: string;
-  mac?: string;
-  type: string;
-  status: "Online" | "Offline" | "Warning";
-  ports?: number[];
-  lastSeen?: string;
-  location?: string;
-  manufacturer?: string;
-  model?: string;
-  osVersion?: string;
+
+export interface Device {
+    id: string;
+    name: string;
+    type: string;
+    status: 'online' | 'offline' | 'unknown';
+    ip: string;
+    mac: string;
+    manufacturer: string;
+    lastSeen: string;
+    firstSeen: string;
 }
 
-export interface ScanResult {
-  id: number;
-  timestamp: string;
-  devicesFound: number;
-  duration: number;
-  status: "success" | "failed";
-  errors?: string[];
-}
-
-export interface PortInfo {
-  deviceId: number;
-  portNumber: number;
-  service: string;
-  status: "open" | "closed" | "filtered";
-  protocol: "tcp" | "udp";
-  banner?: string;
+export interface NodeConfig {
+    id: string;
+    name: string;
+    type: "Primary" | "Secondary" | "Backup";
+    status: "online" | "offline" | "maintenance";
+    location: string;
+    port: number;
+    primaryNodeUrl?: string;
+    devices: Device[];
 }
 
 export interface Node {
-  id: string;
-  name: string;
-  status: "online" | "offline" | "warning";
-  type: "Primary" | "Secondary" | "Backup";
-  lastSeen: string;
-  location?: string;
-  ipAddress?: string;
-  version?: string;
-  metrics?: {
+    id: string;
+    name: string;
+    type: string;
+    status: string;
+    location: string;
+}
+
+export interface NodeThresholds {
     cpu: number;
     memory: number;
     disk: number;
     network: number;
-  };
 }
 
-export interface NodeMetrics {
-  cpu: number;
-  memory: number;
-  disk: number;
-  network: number;
+export interface DeviceInfo {
+    id: string;
+    ip: string;
+    mac: string;
+    name: string;
+    type: string;
+    status: string;
+    lastSeen: string;
+    firstSeen: string;
 }
 
-export interface NodeThresholds {
-  cpu: number;
-  memory: number;
-  disk: number;
-  network: number;
-}
-
-export interface AlertInfo {
-  id: number;
-  type: "error" | "warning" | "info";
-  message: string;
-  timestamp: string;
-  deviceId?: number;
-  nodeId?: string;
-  resolved?: boolean;
-  priority: "high" | "medium" | "low";
+export interface ScanResult {
+    id: number;
+    timestamp: string;
+    devicesFound: number;
+    duration: number;
+    status: 'completed' | 'failed';
+    errors?: string[];
 }
 
 export interface BackendStatus {
-  isOnline: boolean;
-  lastCheck: string;
-  version?: string;
-  latency?: number;
+    isOnline: boolean;
+    lastCheck: string;
+    version?: string;
+    latency?: number;
 }
 
 export interface SystemStatus {
-  backend: BackendStatus;
-  activeDevices: number;
-  activeNodes: number;
-  lastScanTimestamp?: string;
-  alerts: AlertInfo[];
+    backend: BackendStatus;
+    activeDevices: number;
+    activeNodes: number;
+    alerts: AlertInfo[];
+}
+
+export interface AlertInfo {
+    id: number;
+    type: 'info' | 'warning' | 'error';
+    message: string;
+    timestamp: string;
+    priority: 'low' | 'medium' | 'high';
 }

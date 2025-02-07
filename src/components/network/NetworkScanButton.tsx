@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +14,11 @@ import { useNetworkScan } from '@/hooks/useNetworkScan';
 import { NetworkScanResults } from './NetworkScanResults';
 import { Progress } from '@/components/ui/progress';
 
-export function NetworkScanButton() {
+interface NetworkScanButtonProps {
+    onClick?: () => Promise<void>;
+}
+
+export function NetworkScanButton({ onClick }: NetworkScanButtonProps) {
     const [open, setOpen] = useState(false);
     const [startIp, setStartIp] = useState('192.168.1.1');
     const [endIp, setEndIp] = useState('192.168.1.10'); // Reduced range for testing
@@ -22,7 +27,11 @@ export function NetworkScanButton() {
     const handleScan = async () => {
         try {
             console.log('Starting scan with range:', { startIp, endIp });
-            await startScan(startIp, endIp);
+            if (onClick) {
+                await onClick();
+            } else {
+                await startScan(startIp, endIp);
+            }
         } catch (error) {
             console.error('Error during scan:', error);
         }

@@ -1,16 +1,16 @@
 {
   "users": {},
   "devices": {
-    "9": {
-      "id": "9",
-      "name": "Device (192.168.1.1)",
-      "ip": "192.168.1.1",
-      "mac": "50-E0-39-0B-38-20",
-      "type": "Linux/Unix Host",
+    "0afcfb02-8adc-42c5-b110-4901eab17fce": {
+      "id": "0afcfb02-8adc-42c5-b110-4901eab17fce",
+      "ip": "10.0.0.100",
+      "mac": "44:8A:5B:85:A8:13",
+      "name": "HLT",
+      "type": "workstation",
+      "manufacturer": "Unknown",
       "status": "online",
-      "last_seen": "2025-02-05T18:21:54.798Z",
-      "firstSeen": "2025-02-05T18:21:54.798Z",
-      "lastSeen": "2025-02-05T18:21:54.798Z"
+      "lastSeen": "2025-02-06T08:21:32.220Z",
+      "firstSeen": "2025-02-06T08:21:32.220Z"
     }
   },
   "networkScans": {

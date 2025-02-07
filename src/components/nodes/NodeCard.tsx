@@ -1,160 +1,104 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Server, Activity, Network, Power, Monitor, Trash2 } from "lucide-react";
-import { Node } from "@/types/network";
+import { Badge } from "@/components/ui/badge";
+import { NodeConfig } from "@/types/network";
+import { NodeActions } from "./NodeActions";
+import { DeviceList } from "./DeviceList";
 
 interface NodeCardProps {
-    node: Node;
-    onTestConnection: (nodeId: string) => void;
-    onNetworkInfo: (nodeId: string) => void;
-    onPowerAction: () => void;
-    onConsole: (nodeId: string) => void;
-    onRemove: (nodeId: string) => void;
+    node: NodeConfig;
+    onEdit: (node: NodeConfig) => void;
+    onDelete: (node: NodeConfig) => void;
+    onConsole: (node: NodeConfig) => void;
+    onNetworkInfo: (node: NodeConfig) => void;
+    onPowerAction: (node: NodeConfig) => void;
+    onTestConnection: (node: NodeConfig) => void;
 }
 
-const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-        case 'online':
-            return 'bg-green-500 text-white';
-        case 'offline':
-            return 'bg-red-500 text-white';
-        default:
-            return 'bg-gray-500 text-white';
-    }
-};
+export function NodeCard({
+    node,
+    onEdit,
+    onDelete,
+    onConsole,
+    onNetworkInfo,
+    onPowerAction,
+    onTestConnection,
+}: NodeCardProps) {
+    const getStatusColor = (status: string) => {
+        switch (status.toLowerCase()) {
+            case "online":
+                return "bg-green-500";
+            case "offline":
+                return "bg-red-500";
+            case "maintenance":
+                return "bg-yellow-500";
+            default:
+                return "bg-gray-500";
+        }
+    };
 
-const getMetricColor = (value: number) => {
-    if (value >= 90) return 'text-red-500';
-    if (value >= 75) return 'text-orange-500';
-    if (value >= 60) return 'text-yellow-500';
-    return 'text-green-500';
-};
-
-export const NodeCard = ({ 
-    node, 
-    onTestConnection, 
-    onNetworkInfo, 
-    onPowerAction, 
-    onConsole, 
-    onRemove 
-}: NodeCardProps) => {
     return (
-        <Card className="relative">
+        <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                    {node.name}
-                </CardTitle>
-                <Server className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-xl font-bold">{node.name}</CardTitle>
+                <NodeActions
+                    node={node}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    onConsole={onConsole}
+                    onNetworkInfo={onNetworkInfo}
+                    onPowerAction={onPowerAction}
+                    onTestConnection={onTestConnection}
+                />
             </CardHeader>
             <CardContent>
                 <div className="flex flex-col space-y-2">
                     <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Status</span>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(node.status)}`}>
-                            {node.status}
-                        </span>
-                    </div>
-                    <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Type</span>
-                        <span className="text-sm">{node.type}</span>
+                        <Badge variant="outline">{node.type}</Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">IP Address</span>
-                        <span className="text-sm">{node.ipAddress}</span>
+                        <span className="text-sm text-muted-foreground">Status</span>
+                        <div className="flex items-center space-x-2">
+                            <div
+                                className={`h-2 w-2 rounded-full ${getStatusColor(
+                                    node.status
+                                )}`}
+                            />
+                            <span className="text-sm font-medium">
+                                {node.status}
+                            </span>
+                        </div>
                     </div>
                     <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Location</span>
+                        <span className="text-sm text-muted-foreground">
+                            Location
+                        </span>
                         <span className="text-sm">{node.location}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Version</span>
-                        <span className="text-sm">{node.version}</span>
+                        <span className="text-sm text-muted-foreground">Port</span>
+                        <span className="text-sm">{node.port}</span>
                     </div>
-
-                    <div className="pt-4">
-                        <div className="text-sm font-medium mb-2">System Metrics</div>
-                        <div className="grid grid-cols-2 gap-2">
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs text-muted-foreground">CPU</span>
-                                <span className={`text-xs font-medium ${getMetricColor(node.metrics?.cpu || 0)}`}>
-                                    {node.metrics?.cpu}%
-                                </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs text-muted-foreground">Memory</span>
-                                <span className={`text-xs font-medium ${getMetricColor(node.metrics?.memory || 0)}`}>
-                                    {node.metrics?.memory}%
-                                </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs text-muted-foreground">Disk</span>
-                                <span className={`text-xs font-medium ${getMetricColor(node.metrics?.disk || 0)}`}>
-                                    {node.metrics?.disk}%
-                                </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs text-muted-foreground">Network</span>
-                                <span className={`text-xs font-medium ${getMetricColor(node.metrics?.network || 0)}`}>
-                                    {node.metrics?.network}%
-                                </span>
-                            </div>
+                    {node.type !== "Primary" && (
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">
+                                Primary Node
+                            </span>
+                            <span className="text-sm truncate max-w-[200px]">
+                                {node.primaryNodeUrl}
+                            </span>
                         </div>
-                    </div>
-
-                    <div className="flex space-x-2 mt-4">
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="flex-1"
-                            onClick={() => onTestConnection(node.id)}
-                        >
-                            <Activity className="h-4 w-4 mr-2" />
-                            Test
-                        </Button>
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="flex-1"
-                            onClick={() => onNetworkInfo(node.id)}
-                        >
-                            <Network className="h-4 w-4 mr-2" />
-                            Network
-                        </Button>
-                    </div>
-                    
-                    <div className="flex space-x-2">
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="flex-1"
-                            onClick={onPowerAction}
-                        >
-                            <Power className="h-4 w-4 mr-2" />
-                            Power
-                        </Button>
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="flex-1"
-                            onClick={() => onConsole(node.id)}
-                        >
-                            <Monitor className="h-4 w-4 mr-2" />
-                            Console
-                        </Button>
-                    </div>
-
-                    <Button 
-                        variant="destructive" 
-                        size="sm"
-                        className="mt-2"
-                        onClick={() => onRemove(node.id)}
-                    >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Remove Node
-                    </Button>
+                    )}
+                    {node.devices && node.devices.length > 0 && (
+                        <div className="mt-4">
+                            <h4 className="text-sm font-semibold mb-2">
+                                Managed Devices
+                            </h4>
+                            <DeviceList devices={node.devices} />
+                        </div>
+                    )}
                 </div>
             </CardContent>
         </Card>
     );
-};
+}

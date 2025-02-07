@@ -1,22 +1,46 @@
-import { useState } from 'react';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { NetworkScanButton } from './NetworkScanButton';
 import { DeviceManagementButton } from './DeviceManagementButton';
 import { Activity, Wifi, Server, AlertTriangle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-export const MonitoringPanel = () => {
-    const [metrics] = useState({
-        activeDevices: 12,
-        networkLoad: 45,
-        serverStatus: 'Healthy',
-        alerts: 2
-    });
+interface MonitoringPanelProps {
+    metrics: {
+        activeDevices: number;
+        networkLoad: number;
+        serverStatus: string;
+        alerts: number;
+    };
+    onScanRequest?: (nodeId: string) => void;
+}
+
+export const MonitoringPanel = ({ metrics, onScanRequest }: MonitoringPanelProps) => {
+    const { toast } = useToast();
+
+    const handleScanClick = async (nodeId: string) => {
+        try {
+            if (onScanRequest) {
+                await onScanRequest(nodeId);
+                toast({
+                    title: "Scan Initiated",
+                    description: "Network scan has been initiated on the node",
+                });
+            }
+        } catch (error) {
+            toast({
+                title: "Scan Failed",
+                description: "Failed to initiate network scan",
+                variant: "destructive",
+            });
+        }
+    };
 
     return (
         <div className="space-y-4">
             <div className="flex justify-end space-x-2 mb-4">
                 <DeviceManagementButton />
-                <NetworkScanButton />
+                <NetworkScanButton onClick={() => handleScanClick('main')} />
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>

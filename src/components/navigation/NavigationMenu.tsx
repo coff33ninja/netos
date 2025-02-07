@@ -1,5 +1,5 @@
 
-import { Home, Monitor, Server, Settings } from "lucide-react";
+import { Home, Monitor, Server, Settings, Network } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 const NavigationMenu = () => {
@@ -11,6 +11,7 @@ const NavigationMenu = () => {
     { path: "/", label: "Dashboard", icon: Home },
     { path: "/devices", label: "Devices", icon: Monitor },
     { path: "/nodes", label: "Nodes", icon: Server },
+    { path: "/network-topology", label: "Network Topology", icon: Network },
     { path: "/settings", label: "Settings", icon: Settings },
   ];
 
