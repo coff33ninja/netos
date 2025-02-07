@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -8,11 +9,15 @@ import { useToast } from "@/hooks/use-toast";
 import { Save, Power, RefreshCw, StopCircle, ExternalLink } from "lucide-react";
 import { controlBackend } from "@/utils/statusMonitor";
 import { StatusIndicator } from "@/components/network/StatusIndicator";
+import { LoadingState } from "@/components/network/LoadingState";
+import { ErrorState } from "@/components/network/ErrorState";
 import { useState, useEffect } from "react";
 
 const Settings = () => {
   const { toast } = useToast();
   const [mapsApiKey, setMapsApiKey] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const savedApiKey = localStorage.getItem('VITE_GOOGLE_MAPS_API_KEY');
@@ -32,8 +37,24 @@ const Settings = () => {
   };
 
   const handleBackendControl = async (action: 'start' | 'stop' | 'restart') => {
-    await controlBackend(action);
+    setIsLoading(true);
+    setError(null);
+    try {
+      await controlBackend(action);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred while controlling the backend');
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (isLoading) {
+    return <LoadingState />;
+  }
+
+  if (error) {
+    return <ErrorState message={error} />;
+  }
 
   return (
     <div className="container mx-auto p-6">

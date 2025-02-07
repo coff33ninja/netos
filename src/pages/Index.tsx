@@ -1,9 +1,12 @@
+
 import { useState, useEffect } from "react";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useToast } from "@/hooks/use-toast";
 import { MonitoringPanel } from "@/components/network/MonitoringPanel";
 import { MainContent } from "@/components/network/MainContent";
 import { NetworkTabs } from "@/components/network/NetworkTabs";
+import { LoadingState } from "@/components/network/LoadingState";
+import { ErrorState } from "@/components/network/ErrorState";
 import {
   Pagination,
   PaginationContent,
@@ -19,7 +22,7 @@ const Index = () => {
   const [currentHistoricalPage, setCurrentHistoricalPage] = useState(1);
   const [currentAlertsPage, setCurrentAlertsPage] = useState(1);
   const [currentDevicesPage, setCurrentDevicesPage] = useState(1);
-  const { devices, currentScan } = useWebSocket();
+  const { devices, currentScan, isLoading, error } = useWebSocket();
   const { toast } = useToast();
   const [metrics, setMetrics] = useState({
     activeDevices: 0,
@@ -80,6 +83,14 @@ const Index = () => {
       </PaginationContent>
     </Pagination>
   );
+
+  if (isLoading) {
+    return <LoadingState />;
+  }
+
+  if (error) {
+    return <ErrorState message={error} />;
+  }
 
   return (
     <div className="container mx-auto p-4 lg:p-6 min-h-screen animate-fade-in">
