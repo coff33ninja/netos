@@ -119,6 +119,14 @@ class ApiService {
         return handleApiResponse(response);
     }
 
+    async fetchDevices(): Promise<Device[]> {
+        const response = await fetch(API_ENDPOINTS.getAllDevices);
+        if (!response.ok) {
+            throw new Error('Failed to fetch devices');
+        }
+        return handleApiResponse<Device[]>(response);
+    }
+
     // Node-specific methods
     async getNodeConfig(nodeId: string): Promise<NodeConfig> {
         const response = await fetch(API_ENDPOINTS.status + `/nodes/${nodeId}/config`);

@@ -5,74 +5,22 @@ import { useState } from "react";
 import type { Device } from "@/types/api";
 
 // Enhanced template devices for complex network topology
-const templateDevices: Device[] = [
-    { 
-        id: "gateway", 
-        name: "Main Gateway", 
-        type: "router", 
-        status: "online",
-        ip: "192.168.1.1",
-        mac: "00:11:22:33:44:55",
-        manufacturer: "Cisco",
-        lastSeen: new Date().toISOString(),
-        firstSeen: new Date().toISOString()
-    },
-    { 
-        id: "switch1", 
-        name: "Core Switch", 
-        type: "switch", 
-        status: "online",
-        ip: "192.168.1.2",
-        mac: "00:11:22:33:44:56",
-        manufacturer: "Juniper",
-        lastSeen: new Date().toISOString(),
-        firstSeen: new Date().toISOString()
-    },
-    { 
-        id: "server1", 
-        name: "Application Server", 
-        type: "server", 
-        status: "online",
-        ip: "192.168.1.3",
-        mac: "00:11:22:33:44:57",
-        manufacturer: "Dell",
-        lastSeen: new Date().toISOString(),
-        firstSeen: new Date().toISOString()
-    },
-    { 
-        id: "router2", 
-        name: "Distribution Router", 
-        type: "router", 
-        status: "online",
-        ip: "192.168.1.4",
-        mac: "00:11:22:33:44:58",
-        manufacturer: "Cisco",
-        lastSeen: new Date().toISOString(),
-        firstSeen: new Date().toISOString()
-    },
-    { 
-        id: "switch2", 
-        name: "Access Switch", 
-        type: "switch", 
-        status: "online",
-        ip: "192.168.1.5",
-        mac: "00:11:22:33:44:59",
-        manufacturer: "HP",
-        lastSeen: new Date().toISOString(),
-        firstSeen: new Date().toISOString()
-    },
-    { 
-        id: "ap1", 
-        name: "Wireless AP", 
-        type: "access-point", 
-        status: "online",
-        ip: "192.168.1.6",
-        mac: "00:11:22:33:44:60",
-        manufacturer: "Ubiquiti",
-        lastSeen: new Date().toISOString(),
-        firstSeen: new Date().toISOString()
-    }
-];
+import { fetchDevices } from "'services/api'";
+
+const NetworkTopologyPage = () => {
+    const [devices, setDevices] = useState<Device[]>([]);
+    const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
+
+    useEffect(() => {
+        const getDevices = async () => {
+            const fetchedDevices = await fetchDevices();
+            setDevices(fetchedDevices);
+        };
+        getDevices();
+    }, []);
+
+    const sortedDevices = devices.sort((a, b) => a.type.localeCompare(b.type));
+};
 
 export default function NetworkTopologyPage() {
     const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
@@ -89,8 +37,8 @@ export default function NetworkTopologyPage() {
                 </CardHeader>
                 <CardContent className="p-0">
                     <div className="h-full">
-                        <NetworkMap 
-                            networkDevices={templateDevices} 
+                        <NetworkMap
+                            networkDevices={templateDevices}
                             onDeviceSelect={setSelectedDevice}
                             selectedDevice={selectedDevice}
                         />
