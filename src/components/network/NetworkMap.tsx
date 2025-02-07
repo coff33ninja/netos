@@ -50,6 +50,7 @@ interface GraphNode {
     type: string;
     status: string;
     val: number;
+    icon: JSX.Element | null;
     x?: number;
     y?: number;
     fx?: number | null;
@@ -60,6 +61,8 @@ interface GraphNode {
 interface GraphLink {
     source: string;
     target: string;
+    type: string;
+    animated: boolean;
 }
 
 interface GraphData {
@@ -152,6 +155,12 @@ export const NetworkMap = ({ networkDevices, onDeviceSelect, selectedDevice }: N
         }
     }, [networkDevices]);
 
+    const getDeviceIcon = (type: string) => {
+        const IconComponent = iconDictionary[type.toLowerCase()];
+        if (!IconComponent) return null;
+        return <IconComponent />;
+    };
+
     const graphData = useMemo<GraphData>(() => {
         const nodes: GraphNode[] = devices.map(device => ({
             id: device.id,
@@ -159,6 +168,7 @@ export const NetworkMap = ({ networkDevices, onDeviceSelect, selectedDevice }: N
             type: device.type,
             status: device.status,
             val: 1,
+            icon: getDeviceIcon(device.type),
             // Adding mock location data - in real implementation this would come from the device
             location: {
                 lat: Math.random() * 180 - 90,
@@ -173,6 +183,8 @@ export const NetworkMap = ({ networkDevices, onDeviceSelect, selectedDevice }: N
                 links.push({
                     source: gateway.id,
                     target: device.id,
+                    type: "straight",
+                    animated: device.status === "online",
                 });
             });
         }
@@ -189,6 +201,8 @@ export const NetworkMap = ({ networkDevices, onDeviceSelect, selectedDevice }: N
                 return '#10b981';
             case 'server':
                 return '#8b5cf6';
+            case 'access-point':
+                return '#3b82f6';
             default:
                 return '#6b7280';
         }
@@ -257,31 +271,35 @@ export const NetworkMap = ({ networkDevices, onDeviceSelect, selectedDevice }: N
                             linkColor={() => '#e5e7eb'}
                             nodeCanvasObject={(node: any, ctx, globalScale) => {
                                 constrainNode(node);
+                                
+                                // Draw node background
+                                const size = 30;
+                                ctx.beginPath();
+                                ctx.fillStyle = getNodeColor(node);
+                                ctx.arc(node.x, node.y, size/2, 0, 2 * Math.PI);
+                                ctx.fill();
+
+                                // Draw node label
                                 const label = node.name;
                                 const fontSize = 12/globalScale;
                                 ctx.font = `${fontSize}px Sans-Serif`;
-                                const textWidth = ctx.measureText(label).width;
-                                const bckgDimensions = [textWidth, fontSize];
-                                const paddedDimensions = bckgDimensions.map(n => n + fontSize * 0.2);
-
-                                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                                ctx.fillRect(
-                                    node.x - paddedDimensions[0] / 2,
-                                    node.y - paddedDimensions[1] / 2,
-                                    paddedDimensions[0],
-                                    paddedDimensions[1]
-                                );
-
                                 ctx.textAlign = 'center';
-                                ctx.textBaseline = 'middle';
-                                ctx.fillStyle = getNodeColor(node);
-                                ctx.fillText(label, node.x, node.y);
+                                ctx.textBaseline = 'bottom';
+                                ctx.fillStyle = '#000000';
+                                ctx.fillText(label, node.x, node.y + size);
+
+                                // Draw status indicator
+                                const statusRadius = 4;
+                                ctx.beginPath();
+                                ctx.fillStyle = node.status === 'online' ? '#22c55e' : '#ef4444';
+                                ctx.arc(node.x + size/2, node.y - size/2, statusRadius, 0, 2 * Math.PI);
+                                ctx.fill();
                             }}
                             nodePointerAreaPaint={(node: any, color, ctx) => {
                                 ctx.fillStyle = color;
-                                const size = 8;
+                                const size = 30;
                                 ctx.beginPath();
-                                ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
+                                ctx.arc(node.x, node.y, size/2, 0, 2 * Math.PI);
                                 ctx.fill();
                             }}
                             cooldownTicks={50}
@@ -300,6 +318,8 @@ export const NetworkMap = ({ networkDevices, onDeviceSelect, selectedDevice }: N
                             }}
                             width={containerRef.current?.clientWidth}
                             height={containerRef.current?.clientHeight}
+                            linkDirectionalParticles={2}
+                            linkDirectionalParticleSpeed={0.005}
                             d3AlphaDecay={0.1}
                             d3VelocityDecay={0.4}
                         />
