@@ -103,9 +103,6 @@ export const ForceGraphComponent = ({
                 ctx.fill();
             }}
             cooldownTicks={50}
-            onEngineStop={(engine) => {
-                engine.zoomToFit(400, 50);
-            }}
             onNodeClick={onNodeClick}
             onNodeDragEnd={(node: GraphNode) => {
                 node.fx = node.x;

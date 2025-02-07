@@ -207,3 +207,4 @@ export const NetworkMap = ({ networkDevices, onDeviceSelect, selectedDevice }: N
         </div>
     );
 };
+
