@@ -1,42 +1,13 @@
+
 import { useEffect, useState, useRef, useMemo } from 'react';
-import { ForceGraph2D } from 'react-force-graph';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { api } from '@/services/api';
 import type { Device } from '@/types/api';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { GoogleMap, LoadScript } from '@react-google-maps/api';
-import { 
-    RouterIcon,
-    SwitchIcon,
-    ServerIcon,
-    PhoneIcon,
-    PCIcon,
-    RaspberryPiIcon,
-    LaptopIcon,
-    TabletIcon,
-    PrinterIcon,
-    CameraIcon,
-    AccessPointIcon 
-} from '@/components/icons';
-
-interface IconDictionaryType {
-    [key: string]: JSX.Element;
-}
-
-const iconDictionary: IconDictionaryType = {
-    router: <RouterIcon />,
-    switch: <SwitchIcon />,
-    server: <ServerIcon />,
-    phone: <PhoneIcon />,
-    pc: <PCIcon />,
-    'raspberry-pi': <RaspberryPiIcon />, // Using kebab-case for consistency
-    laptop: <LaptopIcon />,
-    tablet: <TabletIcon />,
-    printer: <PrinterIcon />,
-    camera: <CameraIcon />,
-    'access-point': <AccessPointIcon /> // Using kebab-case for consistency
-};
+import { MapComponent } from './MapComponent';
+import { ForceGraphComponent } from './ForceGraphComponent';
+import { iconDictionary } from './IconMapping';
 
 interface NetworkMapProps {
     networkDevices?: Device[];
@@ -70,32 +41,11 @@ interface GraphData {
     links: GraphLink[];
 }
 
-const mapContainerStyle = {
-    width: '100%',
-    height: '100%',
-    position: 'absolute' as const,
-    top: 0,
-    left: 0,
-    zIndex: 0, // Ensure map stays behind the force graph
-};
-
-const defaultCenter = {
-    lat: 0,
-    lng: 0,
-};
-
-const mapOptions = {
-    disableDefaultUI: true,
-    zoomControl: true,
-    styles: [{ featureType: "all", elementType: "all", stylers: [{ saturation: -100 }] }]
-};
-
 export const NetworkMap = ({ networkDevices, onDeviceSelect, selectedDevice }: NetworkMapProps) => {
-    const graphRef = useRef<any>();
+    const containerRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const [devices, setDevices] = useState<Device[]>([]);
     const [loading, setLoading] = useState(true);
-    const containerRef = useRef<HTMLDivElement>(null);
     const [isMapLoaded, setIsMapLoaded] = useState(false);
     const [mapsApiKey, setMapsApiKey] = useState("");
     const [mapError, setMapError] = useState<string | null>(null);
@@ -157,8 +107,7 @@ export const NetworkMap = ({ networkDevices, onDeviceSelect, selectedDevice }: N
 
     const getDeviceIcon = (type: string) => {
         const IconComponent = iconDictionary[type.toLowerCase()];
-        if (!IconComponent) return null;
-        return <IconComponent />;
+        return IconComponent ? <IconComponent /> : null;
     };
 
     const graphData = useMemo<GraphData>(() => {
@@ -169,7 +118,6 @@ export const NetworkMap = ({ networkDevices, onDeviceSelect, selectedDevice }: N
             status: device.status,
             val: 1,
             icon: getDeviceIcon(device.type),
-            // Adding mock location data - in real implementation this would come from the device
             location: {
                 lat: Math.random() * 180 - 90,
                 lng: Math.random() * 360 - 180
@@ -208,25 +156,17 @@ export const NetworkMap = ({ networkDevices, onDeviceSelect, selectedDevice }: N
         }
     };
 
-    const constrainNode = (node: GraphNode) => {
-        if (!containerRef.current) return;
+    const handleMapError = (error: Error) => {
+        setMapError(error.message);
+        toast({
+            title: "Error",
+            description: "Failed to load Google Maps",
+            variant: "destructive",
+        });
+    };
 
-        const containerRect = containerRef.current.getBoundingClientRect();
-        const padding = 50;
-
-        const minX = padding;
-        const maxX = containerRect.width - padding;
-        const minY = padding;
-        const maxY = containerRect.height - padding;
-
-        if (node.x !== undefined) {
-            node.x = Math.max(minX, Math.min(maxX, node.x));
-            node.fx = node.x;
-        }
-        if (node.y !== undefined) {
-            node.y = Math.max(minY, Math.min(maxY, node.y));
-            node.fy = node.y;
-        }
+    const handleMapLoad = () => {
+        setIsMapLoaded(true);
     };
 
     return (
@@ -242,86 +182,24 @@ export const NetworkMap = ({ networkDevices, onDeviceSelect, selectedDevice }: N
                             {mapError}
                         </div>
                     ) : mapsApiKey ? (
-                        <LoadScript
-                            googleMapsApiKey={mapsApiKey}
+                        <MapComponent
+                            mapsApiKey={mapsApiKey}
+                            mapDimensions={mapDimensions}
                             onError={handleMapError}
-                            onLoad={() => console.log('Google Maps Script loaded')}
-                        >
-                            <GoogleMap
-                                mapContainerStyle={{
-                                    ...mapContainerStyle,
-                                    width: mapDimensions.width || '100%',
-                                    height: mapDimensions.height || '100%'
-                                }}
-                                center={defaultCenter}
-                                zoom={2}
-                                options={mapOptions}
-                                onLoad={handleMapLoad}
-                            >
-                                {/* Map content can go here */}
-                            </GoogleMap>
-                        </LoadScript>
+                            onLoad={handleMapLoad}
+                        />
                     ) : null}
                     <div className="absolute inset-0">
-                        <ForceGraph2D
-                            ref={graphRef}
+                        <ForceGraphComponent
                             graphData={graphData}
-                            nodeLabel="name"
-                            nodeColor={getNodeColor}
-                            linkColor={() => '#e5e7eb'}
-                            nodeCanvasObject={(node: any, ctx, globalScale) => {
-                                constrainNode(node);
-                                
-                                // Draw node background
-                                const size = 30;
-                                ctx.beginPath();
-                                ctx.fillStyle = getNodeColor(node);
-                                ctx.arc(node.x, node.y, size/2, 0, 2 * Math.PI);
-                                ctx.fill();
-
-                                // Draw node label
-                                const label = node.name;
-                                const fontSize = 12/globalScale;
-                                ctx.font = `${fontSize}px Sans-Serif`;
-                                ctx.textAlign = 'center';
-                                ctx.textBaseline = 'bottom';
-                                ctx.fillStyle = '#000000';
-                                ctx.fillText(label, node.x, node.y + size);
-
-                                // Draw status indicator
-                                const statusRadius = 4;
-                                ctx.beginPath();
-                                ctx.fillStyle = node.status === 'online' ? '#22c55e' : '#ef4444';
-                                ctx.arc(node.x + size/2, node.y - size/2, statusRadius, 0, 2 * Math.PI);
-                                ctx.fill();
-                            }}
-                            nodePointerAreaPaint={(node: any, color, ctx) => {
-                                ctx.fillStyle = color;
-                                const size = 30;
-                                ctx.beginPath();
-                                ctx.arc(node.x, node.y, size/2, 0, 2 * Math.PI);
-                                ctx.fill();
-                            }}
-                            cooldownTicks={50}
-                            onEngineStop={() => {
-                                graphRef.current.zoomToFit(400, 50);
-                            }}
+                            containerRef={containerRef}
                             onNodeClick={(node: any) => {
                                 const device = devices.find(d => d.id === node.id);
                                 if (device && onDeviceSelect) {
                                     onDeviceSelect(device);
                                 }
                             }}
-                            onNodeDragEnd={(node: GraphNode) => {
-                                node.fx = node.x;
-                                node.fy = node.y;
-                            }}
-                            width={containerRef.current?.clientWidth}
-                            height={containerRef.current?.clientHeight}
-                            linkDirectionalParticles={2}
-                            linkDirectionalParticleSpeed={0.005}
-                            d3AlphaDecay={0.1}
-                            d3VelocityDecay={0.4}
+                            getNodeColor={getNodeColor}
                         />
                     </div>
                 </>
