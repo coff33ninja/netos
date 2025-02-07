@@ -4,10 +4,11 @@ import { Card } from '@/components/ui/card';
 import { api } from '@/services/api';
 import type { Device } from '@/types/api';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
 import { MapComponent } from './MapComponent';
 import { ForceGraphComponent } from './ForceGraphComponent';
 import { iconDictionary } from './IconMapping';
+import { LoadingState } from './LoadingState';
+import { ErrorState } from './ErrorState';
 
 interface NetworkMapProps {
     networkDevices?: Device[];
@@ -172,15 +173,11 @@ export const NetworkMap = ({ networkDevices, onDeviceSelect, selectedDevice }: N
     return (
         <div ref={containerRef} className="h-full w-full relative">
             {loading ? (
-                <div className="flex justify-center items-center h-[400px]">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                </div>
+                <LoadingState />
             ) : (
                 <>
                     {mapError ? (
-                        <div className="absolute inset-0 bg-gray-100 flex items-center justify-center text-gray-500">
-                            {mapError}
-                        </div>
+                        <ErrorState message={mapError} />
                     ) : mapsApiKey ? (
                         <MapComponent
                             mapsApiKey={mapsApiKey}
@@ -207,4 +204,3 @@ export const NetworkMap = ({ networkDevices, onDeviceSelect, selectedDevice }: N
         </div>
     );
 };
-
