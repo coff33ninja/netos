@@ -125,18 +125,46 @@ export const NetworkMap = ({ networkDevices, onDeviceSelect, selectedDevice }: N
             }
         }));
 
+        // Create a more complex web of connections
         const links: GraphLink[] = [];
-        if (devices.length > 0) {
-            const gateway = devices[0];
-            devices.slice(1).forEach(device => {
-                links.push({
-                    source: gateway.id,
-                    target: device.id,
-                    type: "straight",
-                    animated: device.status === "online",
-                });
+        
+        // Connect all devices to the gateway (first device)
+        const gateway = devices[0];
+        devices.slice(1).forEach(device => {
+            links.push({
+                source: gateway.id,
+                target: device.id,
+                type: "straight",
+                animated: device.status === "online",
             });
-        }
+        });
+
+        // Connect switches to each other
+        const switches = devices.filter(d => d.type === 'switch');
+        switches.forEach((sw, idx) => {
+            if (idx < switches.length - 1) {
+                links.push({
+                    source: sw.id,
+                    target: switches[idx + 1].id,
+                    type: "straight",
+                    animated: sw.status === "online" && switches[idx + 1].status === "online",
+                });
+            }
+        });
+
+        // Connect servers to nearest switch
+        const servers = devices.filter(d => d.type === 'server');
+        servers.forEach((server, idx) => {
+            const targetSwitch = switches[idx % switches.length];
+            if (targetSwitch) {
+                links.push({
+                    source: server.id,
+                    target: targetSwitch.id,
+                    type: "straight",
+                    animated: server.status === "online" && targetSwitch.status === "online",
+                });
+            }
+        });
 
         return { nodes, links };
     }, [devices]);

@@ -79,6 +79,11 @@ export const ForceGraphComponent = ({
                 ctx.arc(node.x, node.y, size/2, 0, 2 * Math.PI);
                 ctx.fill();
 
+                // Draw node border
+                ctx.strokeStyle = '#e5e7eb';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
                 // Draw node label
                 const label = node.name;
                 const fontSize = 12/globalScale;
@@ -114,6 +119,8 @@ export const ForceGraphComponent = ({
             linkDirectionalParticleSpeed={0.005}
             d3AlphaDecay={0.1}
             d3VelocityDecay={0.4}
+            linkWidth={2}
+            linkCurvature={0.25}
         />
     );
 };

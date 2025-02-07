@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 import type { Device } from "@/types/api";
 
-// Template devices for network topology
+// Enhanced template devices for complex network topology
 const templateDevices: Device[] = [
     { 
-        id: "d1", 
-        name: "Router 1", 
+        id: "gateway", 
+        name: "Main Gateway", 
         type: "router", 
         status: "online",
         ip: "192.168.1.1",
@@ -18,8 +18,8 @@ const templateDevices: Device[] = [
         firstSeen: new Date().toISOString()
     },
     { 
-        id: "d2", 
-        name: "Switch 1", 
+        id: "switch1", 
+        name: "Core Switch", 
         type: "switch", 
         status: "online",
         ip: "192.168.1.2",
@@ -29,8 +29,8 @@ const templateDevices: Device[] = [
         firstSeen: new Date().toISOString()
     },
     { 
-        id: "d3", 
-        name: "Server 1", 
+        id: "server1", 
+        name: "Application Server", 
         type: "server", 
         status: "online",
         ip: "192.168.1.3",
@@ -40,16 +40,38 @@ const templateDevices: Device[] = [
         firstSeen: new Date().toISOString()
     },
     { 
-        id: "d4", 
-        name: "Router 2", 
+        id: "router2", 
+        name: "Distribution Router", 
         type: "router", 
-        status: "offline",
+        status: "online",
         ip: "192.168.1.4",
         mac: "00:11:22:33:44:58",
         manufacturer: "Cisco",
         lastSeen: new Date().toISOString(),
         firstSeen: new Date().toISOString()
     },
+    { 
+        id: "switch2", 
+        name: "Access Switch", 
+        type: "switch", 
+        status: "online",
+        ip: "192.168.1.5",
+        mac: "00:11:22:33:44:59",
+        manufacturer: "HP",
+        lastSeen: new Date().toISOString(),
+        firstSeen: new Date().toISOString()
+    },
+    { 
+        id: "ap1", 
+        name: "Wireless AP", 
+        type: "access-point", 
+        status: "online",
+        ip: "192.168.1.6",
+        mac: "00:11:22:33:44:60",
+        manufacturer: "Ubiquiti",
+        lastSeen: new Date().toISOString(),
+        firstSeen: new Date().toISOString()
+    }
 ];
 
 export default function NetworkTopologyPage() {
@@ -58,16 +80,20 @@ export default function NetworkTopologyPage() {
     return (
         <div className="container mx-auto py-6 space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold">Network Overview</h1>
+                <h1 className="text-3xl font-bold">Network Topology</h1>
             </div>
 
             <Card className="h-[800px]">
                 <CardHeader className="border-b">
-                    <CardTitle>Network Topology</CardTitle>
+                    <CardTitle>Interactive Network Map</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                     <div className="h-full">
-                        <NetworkMap networkDevices={templateDevices} />
+                        <NetworkMap 
+                            networkDevices={templateDevices} 
+                            onDeviceSelect={setSelectedDevice}
+                            selectedDevice={selectedDevice}
+                        />
                     </div>
                 </CardContent>
             </Card>
@@ -78,7 +104,7 @@ export default function NetworkTopologyPage() {
                         <CardTitle>Device Details</CardTitle>
                     </CardHeader>
                     <CardContent className="p-4">
-                        <div className="grid gap-4 md:grid-cols-3">
+                        <div className="grid gap-4 md:grid-cols-4">
                             <div className="space-y-2">
                                 <div className="text-sm font-medium text-muted-foreground">Name</div>
                                 <div>{selectedDevice.name}</div>
@@ -100,6 +126,10 @@ export default function NetworkTopologyPage() {
                             <div className="space-y-2">
                                 <div className="text-sm font-medium text-muted-foreground">IP Address</div>
                                 <div>{selectedDevice.ip}</div>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="text-sm font-medium text-muted-foreground">Manufacturer</div>
+                                <div>{selectedDevice.manufacturer}</div>
                             </div>
                         </div>
                     </CardContent>
