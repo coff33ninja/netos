@@ -5,11 +5,15 @@ import { useState, useEffect } from "react";
 import type { Device } from "@/types/api";
 import { api } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import { DeviceGroupManager } from "@/components/network/DeviceGroupManager";
+import { EnhancedDeviceDetails } from "@/components/network/EnhancedDeviceDetails";
+import { DeviceGroup, EnhancedDevice } from "@/types/performance";
 
 export default function NetworkTopologyPage() {
-    const [devices, setDevices] = useState<Device[]>([]);
-    const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
+    const [devices, setDevices] = useState<EnhancedDevice[]>([]);
+    const [selectedDevice, setSelectedDevice] = useState<EnhancedDevice | null>(null);
     const [loading, setLoading] = useState(true);
+    const [groups, setGroups] = useState<DeviceGroup[]>([]);
     const { toast } = useToast();
 
     useEffect(() => {
@@ -17,7 +21,14 @@ export default function NetworkTopologyPage() {
             try {
                 setLoading(true);
                 const fetchedDevices = await api.fetchDevices();
-                setDevices(fetchedDevices);
+                // Transform to enhanced devices
+                const enhancedDevices = fetchedDevices.map(device => ({
+                    ...device,
+                    tags: [],
+                    performance: [],
+                    history: []
+                }));
+                setDevices(enhancedDevices);
             } catch (error) {
                 console.error('Error fetching devices:', error);
                 toast({
@@ -37,6 +48,66 @@ export default function NetworkTopologyPage() {
         return () => clearInterval(interval);
     }, [toast]);
 
+    // Simulate performance data generation
+    useEffect(() => {
+        const generatePerformanceData = () => {
+            setDevices(prevDevices => 
+                prevDevices.map(device => ({
+                    ...device,
+                    performance: [
+                        ...device.performance,
+                        {
+                            deviceId: device.id,
+                            timestamp: new Date().toISOString(),
+                            latency: Math.random() * 100,
+                            packetLoss: Math.random() * 5,
+                            bandwidth: Math.random() * 1000
+                        }
+                    ].slice(-20), // Keep last 20 readings
+                }))
+            );
+        };
+
+        const interval = setInterval(generatePerformanceData, 5000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const handleCreateGroup = (groupData: Omit<DeviceGroup, 'id'>) => {
+        const newGroup: DeviceGroup = {
+            ...groupData,
+            id: `group-${Date.now()}`
+        };
+        setGroups(prev => [...prev, newGroup]);
+    };
+
+    const handleDeleteGroup = (groupId: string) => {
+        setGroups(prev => prev.filter(g => g.id !== groupId));
+        // Remove group from devices
+        setDevices(prev => 
+            prev.map(device => ({
+                ...device,
+                group: device.group === groupId ? undefined : device.group
+            }))
+        );
+    };
+
+    const handleAddDeviceToGroup = (groupId: string, deviceId: string) => {
+        setGroups(prev => 
+            prev.map(group => 
+                group.id === groupId
+                    ? { ...group, deviceIds: [...group.deviceIds, deviceId] }
+                    : group
+            )
+        );
+        setDevices(prev =>
+            prev.map(device =>
+                device.id === deviceId
+                    ? { ...device, group: groupId }
+                    : device
+            )
+        );
+    };
+
     const sortedDevices = devices.sort((a, b) => a.type.localeCompare(b.type));
 
     return (
@@ -45,57 +116,32 @@ export default function NetworkTopologyPage() {
                 <h1 className="text-3xl font-bold">Network Topology</h1>
             </div>
 
-            <Card className="h-[800px]">
-                <CardHeader className="border-b">
-                    <CardTitle>Interactive Network Map</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <div className="h-full">
-                        <NetworkMap
-                            networkDevices={sortedDevices}
-                            onDeviceSelect={setSelectedDevice}
-                            selectedDevice={selectedDevice}
-                        />
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="grid gap-6 md:grid-cols-[300px,1fr]">
+                <DeviceGroupManager
+                    groups={groups}
+                    onCreateGroup={handleCreateGroup}
+                    onDeleteGroup={handleDeleteGroup}
+                    onAddDeviceToGroup={handleAddDeviceToGroup}
+                />
 
-            {selectedDevice && (
-                <Card>
+                <Card className="h-[800px]">
                     <CardHeader className="border-b">
-                        <CardTitle>Device Details</CardTitle>
+                        <CardTitle>Interactive Network Map</CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4">
-                        <div className="grid gap-4 md:grid-cols-4">
-                            <div className="space-y-2">
-                                <div className="text-sm font-medium text-muted-foreground">Name</div>
-                                <div>{selectedDevice.name}</div>
-                            </div>
-                            <div className="space-y-2">
-                                <div className="text-sm font-medium text-muted-foreground">Status</div>
-                                <div>
-                                    <span
-                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                            selectedDevice.status === "online"
-                                                ? "bg-green-100 text-green-800"
-                                                : "bg-red-100 text-red-800"
-                                        }`}
-                                    >
-                                        {selectedDevice.status}
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <div className="text-sm font-medium text-muted-foreground">IP Address</div>
-                                <div>{selectedDevice.ip}</div>
-                            </div>
-                            <div className="space-y-2">
-                                <div className="text-sm font-medium text-muted-foreground">Manufacturer</div>
-                                <div>{selectedDevice.manufacturer}</div>
-                            </div>
+                    <CardContent className="p-0">
+                        <div className="h-full">
+                            <NetworkMap
+                                networkDevices={sortedDevices}
+                                onDeviceSelect={setSelectedDevice}
+                                selectedDevice={selectedDevice}
+                            />
                         </div>
                     </CardContent>
                 </Card>
+            </div>
+
+            {selectedDevice && (
+                <EnhancedDeviceDetails device={selectedDevice} />
             )}
         </div>
     );
