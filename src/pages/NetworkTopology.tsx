@@ -4,18 +4,38 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import type { Device } from "@/types/api";
 import { api } from "@/services/api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function NetworkTopologyPage() {
     const [devices, setDevices] = useState<Device[]>([]);
     const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
+    const [loading, setLoading] = useState(true);
+    const { toast } = useToast();
 
     useEffect(() => {
         const getDevices = async () => {
-            const fetchedDevices = await api.fetchDevices();
-            setDevices(fetchedDevices);
+            try {
+                setLoading(true);
+                const fetchedDevices = await api.fetchDevices();
+                setDevices(fetchedDevices);
+            } catch (error) {
+                console.error('Error fetching devices:', error);
+                toast({
+                    title: "Error",
+                    description: "Failed to fetch network devices",
+                    variant: "destructive",
+                });
+            } finally {
+                setLoading(false);
+            }
         };
+        
         getDevices();
-    }, []);
+        
+        // Fetch devices every 30 seconds
+        const interval = setInterval(getDevices, 30000);
+        return () => clearInterval(interval);
+    }, [toast]);
 
     const sortedDevices = devices.sort((a, b) => a.type.localeCompare(b.type));
 

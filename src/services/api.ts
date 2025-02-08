@@ -1,3 +1,4 @@
+
 import { API_ENDPOINTS, handleApiResponse } from '@/config/api';
 
 export interface Device {
@@ -51,10 +52,21 @@ export interface NodeTestResult {
 
 class ApiService {
     async getAllDevices(): Promise<Device[]> {
-        console.log('Making GET request to:', API_ENDPOINTS.getAllDevices);
-        const response = await fetch(API_ENDPOINTS.getAllDevices);
-        console.log('Response status:', response.status);
-        return handleApiResponse<Device[]>(response);
+        try {
+            console.log('Making GET request to:', API_ENDPOINTS.getAllDevices);
+            const response = await fetch(API_ENDPOINTS.getAllDevices);
+            console.log('Response status:', response.status);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error fetching devices:', error);
+            throw new Error('Failed to fetch devices');
+        }
     }
 
     async getDeviceById(id: string): Promise<Device> {
@@ -120,11 +132,12 @@ class ApiService {
     }
 
     async fetchDevices(): Promise<Device[]> {
-        const response = await fetch(API_ENDPOINTS.getAllDevices);
-        if (!response.ok) {
-            throw new Error('Failed to fetch devices');
+        try {
+            return await this.getAllDevices();
+        } catch (error) {
+            console.error('Error in fetchDevices:', error);
+            return [];
         }
-        return handleApiResponse<Device[]>(response);
     }
 
     // Node-specific methods
