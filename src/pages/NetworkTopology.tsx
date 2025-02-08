@@ -1,29 +1,23 @@
 
 import { NetworkMap } from "@/components/network/NetworkMap";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Device } from "@/types/api";
+import { api } from "@/services/api";
 
-// Enhanced template devices for complex network topology
-import { fetchDevices } from "'services/api'";
-
-const NetworkTopologyPage = () => {
+export default function NetworkTopologyPage() {
     const [devices, setDevices] = useState<Device[]>([]);
     const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
 
     useEffect(() => {
         const getDevices = async () => {
-            const fetchedDevices = await fetchDevices();
+            const fetchedDevices = await api.fetchDevices();
             setDevices(fetchedDevices);
         };
         getDevices();
     }, []);
 
     const sortedDevices = devices.sort((a, b) => a.type.localeCompare(b.type));
-};
-
-export default function NetworkTopologyPage() {
-    const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
 
     return (
         <div className="container mx-auto py-6 space-y-6">
@@ -38,7 +32,7 @@ export default function NetworkTopologyPage() {
                 <CardContent className="p-0">
                     <div className="h-full">
                         <NetworkMap
-                            networkDevices={templateDevices}
+                            networkDevices={sortedDevices}
                             onDeviceSelect={setSelectedDevice}
                             selectedDevice={selectedDevice}
                         />
